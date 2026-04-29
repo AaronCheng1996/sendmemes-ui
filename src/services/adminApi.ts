@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, EffectiveSchedule, Image } from '../types/admin'
+import type { Album, EffectiveSchedule, Image, Page } from '../types/admin'
 
 function ensureNumber(v: string): number {
   return Number(v) || 0
@@ -25,8 +25,9 @@ export async function adminFetch(path: string, init?: RequestInit) {
   return res.json()
 }
 
-export async function listAlbums() {
-  return (await adminFetch('/v1/admin/albums?offset=0&limit=300')) as Album[]
+export async function listAlbums(offset = 0, limit = 50) {
+  const qs = `offset=${offset}&limit=${limit}`
+  return (await adminFetch(`/v1/admin/albums?${qs}`)) as Page<Album>
 }
 
 export async function createAlbum(name: string) {
@@ -41,9 +42,10 @@ export async function deleteAlbum(id: number) {
   return adminFetch(`/v1/admin/albums/${id}`, { method: 'DELETE' })
 }
 
-export async function listImages(albumID?: string) {
+export async function listImages(albumID?: string, offset = 0, limit = 50) {
   const albumQuery = albumID?.trim() ? `&album_id=${encodeURIComponent(albumID.trim())}` : ''
-  return (await adminFetch(`/v1/admin/images?offset=0&limit=300${albumQuery}`)) as Image[]
+  const qs = `offset=${offset}&limit=${limit}${albumQuery}`
+  return (await adminFetch(`/v1/admin/images?${qs}`)) as Page<Image>
 }
 
 export async function createImage(input: {

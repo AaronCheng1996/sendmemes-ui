@@ -4,6 +4,7 @@ export type Album = {
   has_cover: boolean
   cover_image_id?: number
   positive_rating?: number
+  preview_url?: string
 }
 
 export type Image = {
@@ -13,6 +14,14 @@ export type Image = {
   guild_id?: string
   album_id?: number
   file_id?: number
+  preview_url?: string
+}
+
+export type Page<T> = {
+  items: T[]
+  total: number
+  offset: number
+  limit: number
 }
 
 export type EffectiveSchedule = {

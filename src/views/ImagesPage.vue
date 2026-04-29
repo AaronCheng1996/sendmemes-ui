@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 import type { Image } from '../types/admin'
 import { createImage, deleteImage, listImages, updateImage } from '../services/adminApi'
 import { useToast } from '../composables/useToast'
+import { usePageSize } from '../composables/usePageSize'
+import { usePreviewSize } from '../composables/usePreviewSize'
+import Pagination from '../components/Pagination.vue'
 
 const busy = ref(false)
 const { pushToast } = useToast()
 const images = ref<Image[]>([])
+const total = ref(0)
+const offset = ref(0)
+const limit = usePageSize('sendmemes_ui_images_page_size', 10)
+const { previewSize } = usePreviewSize()
 const albumFilter = ref('')
 
 const newImage = ref({
@@ -39,7 +46,16 @@ async function runTask(task: () => Promise<void>) {
 }
 
 async function refresh() {
-  images.value = await listImages(albumFilter.value)
+  const page = await listImages(albumFilter.value, offset.value, limit.value)
+  images.value = page.items
+  total.value = page.total
+  offset.value = page.offset
+  limit.value = page.limit
+}
+
+async function applyFilter() {
+  offset.value = 0
+  await refresh()
 }
 
 async function onCreate() {
@@ -64,6 +80,10 @@ async function onDelete(id: number) {
   await refresh()
 }
 
+watch([offset, limit], () => {
+  runTask(refresh)
+})
+
 onMounted(() => runTask(refresh))
 </script>
 
@@ -71,7 +91,8 @@ onMounted(() => runTask(refresh))
   <section class="panel">
     <div class="row">
       <h2>Images</h2>
-      <input v-model="albumFilter" placeholder="album_id filter" />
+      <input v-model="albumFilter" placeholder="album_id filter" @keydown.enter="runTask(applyFilter)" />
+      <button :disabled="busy" @click="runTask(applyFilter)">Apply Filter</button>
       <button :disabled="busy" @click="runTask(refresh)">Refresh</button>
     </div>
 
@@ -86,10 +107,20 @@ onMounted(() => runTask(refresh))
       <button :disabled="busy" @click="runTask(onCreate)">Create Image</button>
     </div>
 
+    <Pagination
+      :total="total"
+      :offset="offset"
+      :limit="limit"
+      :busy="busy"
+      @update:offset="(v: number) => (offset = v)"
+      @update:limit="(v: number) => (limit = v)"
+    />
+
     <table>
       <thead>
         <tr>
           <th>ID</th>
+          <th v-if="previewSize !== 'off'">Preview</th>
           <th>URL</th>
           <th>source</th>
           <th>guild_id</th>
@@ -101,6 +132,13 @@ onMounted(() => runTask(refresh))
       <tbody>
         <tr v-for="img in images" :key="img.id">
           <td>{{ img.id }}</td>
+          <td v-if="previewSize !== 'off'">
+            <span v-if="img.preview_url" class="thumb-wrap">
+              <img class="thumb" :class="`thumb-${previewSize}`" :src="img.preview_url" :alt="img.url" loading="lazy" />
+              <img class="thumb-full" :src="img.preview_url" :alt="img.url" loading="lazy" />
+            </span>
+            <div v-else class="thumb-placeholder" :class="`thumb-${previewSize}`">N/A</div>
+          </td>
           <td class="urlCell">
             <input v-if="editingImageId === img.id" v-model="editingImage.url" />
             <span v-else>{{ img.url }}</span>
@@ -147,6 +185,15 @@ onMounted(() => runTask(refresh))
         </tr>
       </tbody>
     </table>
+
+    <Pagination
+      :total="total"
+      :offset="offset"
+      :limit="limit"
+      :busy="busy"
+      @update:offset="(v: number) => (offset = v)"
+      @update:limit="(v: number) => (limit = v)"
+    />
 
     <p v-if="busy" class="status">Working...</p>
   </section>
