@@ -1,0 +1,77 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+
+import type { EffectiveSchedule } from '../types/admin'
+import { getSchedule, putSchedule } from '../services/adminApi'
+import { useToast } from '../composables/useToast'
+
+const busy = ref(false)
+const { pushToast } = useToast()
+const guildQuery = ref('')
+const effective = ref<EffectiveSchedule | null>(null)
+const form = ref({
+  guild_id: '',
+  send_channel_id: '',
+  send_interval: '6h',
+  send_history_size: 10,
+})
+
+async function runTask(task: () => Promise<void>) {
+  busy.value = true
+  try {
+    await task()
+  } catch (error) {
+    pushToast((error as Error).message, 'error')
+  } finally {
+    busy.value = false
+  }
+}
+
+async function load() {
+  const data = await getSchedule(guildQuery.value)
+  effective.value = data
+  form.value = {
+    guild_id: data.guild_id || guildQuery.value,
+    send_channel_id: data.send_channel_id || '',
+    send_interval: data.send_interval || '6h',
+    send_history_size: data.send_history_size || 10,
+  }
+}
+
+async function save() {
+  await putSchedule(form.value)
+  await load()
+  pushToast('Schedule updated', 'success')
+}
+
+onMounted(() => runTask(load))
+</script>
+
+<template>
+  <section class="panel">
+    <div class="row">
+      <h2>Schedule</h2>
+      <input v-model="guildQuery" placeholder="guild_id (optional query)" />
+      <button :disabled="busy" @click="runTask(load)">Load</button>
+    </div>
+
+    <div v-if="effective" class="effectiveCard">
+      <p>guild: <b>{{ effective.guild_id }}</b></p>
+      <p>channel: <b>{{ effective.send_channel_id }}</b> ({{ effective.source_send_channel_id }})</p>
+      <p>interval: <b>{{ effective.send_interval }}</b> ({{ effective.source_send_interval }})</p>
+      <p>history: <b>{{ effective.send_history_size }}</b> ({{ effective.source_send_history_size }})</p>
+    </div>
+
+    <div class="grid2">
+      <label>guild_id<input v-model="form.guild_id" /></label>
+      <label>send_channel_id<input v-model="form.send_channel_id" /></label>
+      <label>send_interval<input v-model="form.send_interval" /></label>
+      <label>send_history_size<input v-model.number="form.send_history_size" type="number" /></label>
+    </div>
+    <div class="row">
+      <button :disabled="busy" @click="runTask(save)">Save Schedule</button>
+    </div>
+
+    <p v-if="busy" class="status">Working...</p>
+  </section>
+</template>
