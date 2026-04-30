@@ -100,9 +100,9 @@ function logout() {
     </div>
 
     <div class="row">
-      <button type="button" :disabled="busy" @click="checkHealth">Test health</button>
+      <button type="button" class="btnCompact" :disabled="busy" @click="checkHealth">Test health</button>
       <span class="healthPill" :class="`health-${health}`">{{ health }}</span>
-      <button type="button" :disabled="busy || !adminKey" @click="testAdmin">Verify admin key</button>
+      <button type="button" class="btnCompact" :disabled="busy || !adminKey" @click="testAdmin">Verify admin key</button>
     </div>
 
     <h3 class="subheading">Session key</h3>
@@ -116,8 +116,8 @@ function logout() {
       </label>
     </div>
     <div class="row">
-      <button type="button" :disabled="busy || !newKey.trim()" @click="saveNewKey">Save new key</button>
-      <button type="button" class="btnDanger" :disabled="busy" @click="logout">Sign out</button>
+      <button type="button" class="btnCompact" :disabled="busy || !newKey.trim()" @click="saveNewKey">Save new key</button>
+      <button type="button" class="btnDanger btnCompact" :disabled="busy" @click="logout">Sign out</button>
     </div>
   </section>
 </template>

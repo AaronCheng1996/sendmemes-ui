@@ -1,8 +1,47 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, EffectiveSchedule, Image, Page } from '../types/admin'
+import type { Album, AlbumSendMode, EffectiveSchedule, Image, ManualScheduleTriggerResult, Page } from '../types/admin'
+
+const EMPTY_ALBUM_CONFIG = '{}'
+
+function albumWritePayload(input: { name: string; send_mode: AlbumSendMode }) {
+  return { ...input, send_config_json: EMPTY_ALBUM_CONFIG }
+}
 
 function ensureNumber(v: string): number {
   return Number(v) || 0
+}
+
+export type SortOrder = 'asc' | 'desc'
+
+export type AlbumListParams = {
+  offset?: number
+  limit?: number
+  sortBy?: string
+  sortOrder?: SortOrder
+  filterField?: string
+  filterQ?: string
+}
+
+export type ImageListParams = {
+  offset?: number
+  limit?: number
+  /** Server-side album scope (optional) */
+  albumId?: string
+  sortBy?: string
+  sortOrder?: SortOrder
+  filterField?: string
+  filterQ?: string
+}
+
+function appendListQS(sp: URLSearchParams, p: { sortBy?: string; sortOrder?: SortOrder; filterField?: string; filterQ?: string }) {
+  const sortBy = p.sortBy?.trim() || 'id'
+  sp.set('sort_by', sortBy)
+  sp.set('sort_order', p.sortOrder === 'desc' ? 'desc' : 'asc')
+  const fq = (p.filterQ ?? '').trim()
+  if (fq) {
+    sp.set('filter_field', (p.filterField && p.filterField !== 'all' ? p.filterField : 'all') || 'all')
+    sp.set('filter_q', fq)
+  }
 }
 
 export async function adminFetch(path: string, init?: RequestInit) {
@@ -25,27 +64,48 @@ export async function adminFetch(path: string, init?: RequestInit) {
   return res.json()
 }
 
-export async function listAlbums(offset = 0, limit = 50) {
-  const qs = `offset=${offset}&limit=${limit}`
-  return (await adminFetch(`/v1/admin/albums?${qs}`)) as Page<Album>
+export async function listAlbums(p: AlbumListParams = {}) {
+  const sp = new URLSearchParams()
+  sp.set('offset', String(p.offset ?? 0))
+  sp.set('limit', String(p.limit ?? 50))
+  appendListQS(sp, p)
+  return (await adminFetch(`/v1/admin/albums?${sp}`)) as Page<Album>
 }
 
-export async function createAlbum(name: string) {
-  return adminFetch('/v1/admin/albums', { method: 'POST', body: JSON.stringify({ name }) })
+export async function createAlbum(input: { name: string; send_mode: AlbumSendMode }) {
+  return adminFetch('/v1/admin/albums', {
+    method: 'POST',
+    body: JSON.stringify(albumWritePayload(input)),
+  })
 }
 
-export async function updateAlbum(id: number, name: string) {
-  return adminFetch(`/v1/admin/albums/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) })
+export async function updateAlbum(id: number, input: { name: string; send_mode: AlbumSendMode }) {
+  return adminFetch(`/v1/admin/albums/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(albumWritePayload(input)),
+  })
+}
+
+/** One-off preview to the configured schedule send channel; optional guild scopes DB schedule row. */
+export async function sendAlbumTest(albumId: number, guildId?: string) {
+  return (await adminFetch(`/v1/admin/albums/${albumId}/send-test`, {
+    method: 'POST',
+    body: JSON.stringify({ guild_id: guildId?.trim() ?? '' }),
+  })) as ManualScheduleTriggerResult
 }
 
 export async function deleteAlbum(id: number) {
   return adminFetch(`/v1/admin/albums/${id}`, { method: 'DELETE' })
 }
 
-export async function listImages(albumID?: string, offset = 0, limit = 50) {
-  const albumQuery = albumID?.trim() ? `&album_id=${encodeURIComponent(albumID.trim())}` : ''
-  const qs = `offset=${offset}&limit=${limit}${albumQuery}`
-  return (await adminFetch(`/v1/admin/images?${qs}`)) as Page<Image>
+export async function listImages(p: ImageListParams = {}) {
+  const sp = new URLSearchParams()
+  sp.set('offset', String(p.offset ?? 0))
+  sp.set('limit', String(p.limit ?? 50))
+  const aid = p.albumId?.trim()
+  if (aid) sp.set('album_id', aid)
+  appendListQS(sp, p)
+  return (await adminFetch(`/v1/admin/images?${sp}`)) as Page<Image>
 }
 
 export async function createImage(input: {

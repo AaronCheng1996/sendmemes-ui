@@ -1,8 +1,12 @@
+export type AlbumSendMode = 'Order' | 'Random' | 'Single' | 'Custom'
+
 export type Album = {
   id: number
   name: string
   has_cover: boolean
   cover_image_id?: number
+  send_mode: AlbumSendMode
+  send_config_json?: string
   positive_rating?: number
   preview_url?: string
 }
@@ -32,4 +36,12 @@ export type EffectiveSchedule = {
   source_send_channel_id: string
   source_send_interval: string
   source_send_history_size: string
+}
+
+export type ManualScheduleTriggerResult = {
+  triggered: boolean
+  album_id?: number
+  album_name?: string
+  channel_id?: string
+  message_id?: string
 }

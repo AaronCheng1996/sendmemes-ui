@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
 import type { Image } from '../types/admin'
 import { createImage, deleteImage, listImages, updateImage } from '../services/adminApi'
@@ -16,7 +16,6 @@ const offset = ref(0)
 const limit = usePageSize('sendmemes_ui_images_page_size', 10)
 const { previewSize } = usePreviewSize()
 
-/** Passed to list API (server-side album scope). */
 const apiAlbumIdInput = ref('')
 const apiAlbumId = ref('')
 
@@ -53,7 +52,6 @@ function applyFilters() {
   filterField.value = filterFieldInput.value
   filterText.value = filterTextInput.value
   offset.value = 0
-  runTask(refresh)
 }
 
 function toggleSort(key: ImageSortKey) {
@@ -63,79 +61,13 @@ function toggleSort(key: ImageSortKey) {
     sortKey.value = key
     sortDir.value = 'asc'
   }
+  offset.value = 0
 }
 
 function sortLabel(key: ImageSortKey) {
   if (sortKey.value !== key) return ''
   return sortDir.value === 'asc' ? '↑' : '↓'
 }
-
-const displayImages = computed(() => {
-  let rows = [...images.value]
-  const q = filterText.value.trim().toLowerCase()
-  if (q) {
-    rows = rows.filter((img) => {
-      switch (filterField.value) {
-        case 'id':
-          return String(img.id).includes(q)
-        case 'album_id':
-          return String(img.album_id ?? '').includes(q)
-        case 'url':
-          return (img.url || '').toLowerCase().includes(q)
-        case 'source':
-          return (img.source || '').toLowerCase().includes(q)
-        case 'guild_id':
-          return (img.guild_id || '').toLowerCase().includes(q)
-        case 'file_id':
-          return String(img.file_id ?? '').includes(q)
-        case 'all':
-        default:
-          return (
-            String(img.id).includes(q) ||
-            String(img.album_id ?? '').includes(q) ||
-            (img.url || '').toLowerCase().includes(q) ||
-            (img.source || '').toLowerCase().includes(q) ||
-            (img.guild_id || '').toLowerCase().includes(q) ||
-            String(img.file_id ?? '').includes(q)
-          )
-      }
-    })
-  }
-  const dir = sortDir.value === 'asc' ? 1 : -1
-  rows.sort((a, b) => {
-    const av = (k: ImageSortKey) => {
-      switch (k) {
-        case 'id':
-          return a.id
-        case 'album_id':
-          return a.album_id ?? 0
-        case 'file_id':
-          return a.file_id ?? 0
-        default:
-          return (a[k] as string) || ''
-      }
-    }
-    const bv = (k: ImageSortKey) => {
-      switch (k) {
-        case 'id':
-          return b.id
-        case 'album_id':
-          return b.album_id ?? 0
-        case 'file_id':
-          return b.file_id ?? 0
-        default:
-          return (b[k] as string) || ''
-      }
-    }
-    const ka = av(sortKey.value)
-    const kb = bv(sortKey.value)
-    if (typeof ka === 'number' && typeof kb === 'number') {
-      return (ka - kb) * dir
-    }
-    return String(ka).localeCompare(String(kb), undefined, { sensitivity: 'base' }) * dir
-  })
-  return rows
-})
 
 async function runTask(task: () => Promise<void>) {
   busy.value = true
@@ -149,7 +81,15 @@ async function runTask(task: () => Promise<void>) {
 }
 
 async function refresh() {
-  const page = await listImages(apiAlbumId.value, offset.value, limit.value)
+  const page = await listImages({
+    offset: offset.value,
+    limit: limit.value,
+    albumId: apiAlbumId.value || undefined,
+    sortBy: sortKey.value,
+    sortOrder: sortDir.value,
+    filterField: filterField.value,
+    filterQ: filterText.value,
+  })
   images.value = page.items
   total.value = page.total
   offset.value = page.offset
@@ -184,11 +124,9 @@ function openCreate() {
   createOpen.value = true
 }
 
-watch([offset, limit], () => {
+watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], () => {
   runTask(refresh)
-})
-
-onMounted(() => runTask(refresh))
+}, { immediate: true })
 </script>
 
 <template>
@@ -198,9 +136,9 @@ onMounted(() => runTask(refresh))
       <div class="toolbarFilters toolbarFiltersWide">
         <label class="toolbarLabel">
           Album ID (API scope)
-          <input v-model="apiAlbumIdInput" placeholder="optional" title="Restrict list to this album on the server" @keydown.enter="applyFilters" />
+          <input v-model="apiAlbumIdInput" placeholder="optional" title="Restrict list to one album on the server" @keydown.enter="applyFilters" />
         </label>
-        <select v-model="filterFieldInput" title="Filter column (current page)">
+        <select v-model="filterFieldInput" class="selectCompact" title="Filter column">
           <option value="all">All fields</option>
           <option value="id">ID</option>
           <option value="album_id">Album ID</option>
@@ -209,16 +147,16 @@ onMounted(() => runTask(refresh))
           <option value="guild_id">Guild ID</option>
           <option value="file_id">File ID</option>
         </select>
-        <input v-model="filterTextInput" placeholder="Filter query…" @keydown.enter="applyFilters" />
-        <button type="button" :disabled="busy" @click="applyFilters">Apply</button>
+        <input v-model="filterTextInput" class="inputGrow" placeholder="Filter query…" @keydown.enter="applyFilters" />
+        <button type="button" class="btnCompact" :disabled="busy" @click="applyFilters">Apply</button>
       </div>
       <div class="toolbarActions">
-        <button type="button" :disabled="busy" @click="runTask(refresh)">Refresh</button>
+        <button type="button" class="btnCompact" :disabled="busy" @click="runTask(refresh)">Refresh</button>
         <button type="button" class="btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
     </div>
     <p class="muted tableHint">
-      Album ID scopes the request to the server; other filters refine the <strong>current page</strong> ({{ displayImages.length }} / {{ images.length }} rows).
+      Album ID limits rows to one album; filter and sort apply to <strong>all matching rows</strong> before pagination.
     </p>
 
     <Pagination
@@ -236,15 +174,15 @@ onMounted(() => runTask(refresh))
           <th class="sortable" @click="toggleSort('id')">ID {{ sortLabel('id') }}</th>
           <th v-if="previewSize !== 'off'">Preview</th>
           <th class="sortable" @click="toggleSort('url')">URL {{ sortLabel('url') }}</th>
-          <th class="sortable" @click="toggleSort('source')">source {{ sortLabel('source') }}</th>
-          <th class="sortable" @click="toggleSort('guild_id')">guild_id {{ sortLabel('guild_id') }}</th>
-          <th class="sortable" @click="toggleSort('album_id')">album_id {{ sortLabel('album_id') }}</th>
-          <th class="sortable" @click="toggleSort('file_id')">file_id {{ sortLabel('file_id') }}</th>
+          <th class="sortable" @click="toggleSort('source')">Source {{ sortLabel('source') }}</th>
+          <th class="sortable" @click="toggleSort('guild_id')">Guild ID {{ sortLabel('guild_id') }}</th>
+          <th class="sortable" @click="toggleSort('album_id')">Album ID {{ sortLabel('album_id') }}</th>
+          <th class="sortable" @click="toggleSort('file_id')">File ID {{ sortLabel('file_id') }}</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="img in displayImages" :key="img.id">
+        <tr v-for="img in images" :key="img.id">
           <td>{{ img.id }}</td>
           <td v-if="previewSize !== 'off'">
             <span v-if="img.preview_url" class="thumb-wrap">

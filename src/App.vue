@@ -70,11 +70,11 @@ function toggleTheme() {
           <p>Admin dashboard</p>
         </div>
         <div class="heroActions">
-          <button :disabled="checking" @click="checkHealth">
+          <button type="button" class="btnCompact" :disabled="checking" @click="checkHealth">
             {{ checking ? 'Checking...' : 'Check API' }}
           </button>
           <span class="healthPill" :class="`health-${health}`">{{ health }}</span>
-          <button type="button" @click="toggleTheme">Theme: {{ theme }}</button>
+          <button type="button" class="btnCompact" @click="toggleTheme">Theme: {{ theme }}</button>
         </div>
       </header>
 

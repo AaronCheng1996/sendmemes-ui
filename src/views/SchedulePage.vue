@@ -49,10 +49,15 @@ onMounted(() => runTask(load))
 
 <template>
   <section class="panel">
-    <div class="row">
-      <h2>Schedule</h2>
-      <input v-model="guildQuery" placeholder="guild_id (optional query)" />
-      <button :disabled="busy" @click="runTask(load)">Load</button>
+    <div class="toolbar">
+      <h2 class="toolbarTitle">Schedule</h2>
+      <div class="toolbarFilters">
+        <label class="toolbarLabel">
+          Guild ID (optional query)
+          <input v-model="guildQuery" class="inputGrow" placeholder="guild_id" @keydown.enter="runTask(load)" />
+        </label>
+        <button type="button" class="btnCompact" :disabled="busy" @click="runTask(load)">Load</button>
+      </div>
     </div>
 
     <div v-if="effective" class="effectiveCard">
@@ -69,7 +74,7 @@ onMounted(() => runTask(load))
       <label>send_history_size<input v-model.number="form.send_history_size" type="number" /></label>
     </div>
     <div class="row">
-      <button :disabled="busy" @click="runTask(save)">Save Schedule</button>
+      <button type="button" class="btnCompact" :disabled="busy" @click="runTask(save)">Save schedule</button>
     </div>
 
     <p v-if="busy" class="status">Working...</p>
