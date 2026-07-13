@@ -61,22 +61,29 @@ onMounted(() => runTask(load))
     </div>
 
     <div v-if="effective" class="effectiveCard">
-      <p>guild: <b>{{ effective.guild_id }}</b></p>
-      <p>channel: <b>{{ effective.send_channel_id }}</b> ({{ effective.source_send_channel_id }})</p>
-      <p>interval: <b>{{ effective.send_interval }}</b> ({{ effective.source_send_interval }})</p>
-      <p>history: <b>{{ effective.send_history_size }}</b> ({{ effective.source_send_history_size }})</p>
+      <p class="effectiveRow">guild: <b>{{ effective.guild_id }}</b></p>
+      <p class="effectiveRow">channel: <b>{{ effective.send_channel_id }}</b> <span class="sourceHint">({{ effective.source_send_channel_id }})</span></p>
+      <p class="effectiveRow">interval: <b>{{ effective.send_interval }}</b> <span class="sourceHint">({{ effective.source_send_interval }})</span></p>
+      <p class="effectiveRow">history: <b>{{ effective.send_history_size }}</b> <span class="sourceHint">({{ effective.source_send_history_size }})</span></p>
     </div>
 
     <div class="grid2">
-      <label>guild_id<input v-model="form.guild_id" /></label>
-      <label>send_channel_id<input v-model="form.send_channel_id" /></label>
-      <label>send_interval<input v-model="form.send_interval" /></label>
-      <label>send_history_size<input v-model.number="form.send_history_size" type="number" /></label>
+      <label class="modalField">guild_id <input v-model="form.guild_id" /></label>
+      <label class="modalField">send_channel_id <input v-model="form.send_channel_id" /></label>
+      <label class="modalField">send_interval <input v-model="form.send_interval" /></label>
+      <label class="modalField">send_history_size <input v-model.number="form.send_history_size" type="number" /></label>
     </div>
-    <div class="row">
-      <button type="button" class="btnCompact" :disabled="busy" @click="runTask(save)">Save schedule</button>
+    <div class="modalActions">
+      <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="runTask(save)">Save schedule</button>
     </div>
 
     <p v-if="busy" class="status">Working...</p>
   </section>
 </template>
+
+<style scoped>
+.sourceHint {
+  font-size: 0.82rem;
+  color: #6a7ea8;
+}
+</style>

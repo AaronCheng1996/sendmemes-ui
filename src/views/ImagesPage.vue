@@ -152,7 +152,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
       </div>
       <div class="toolbarActions">
         <button type="button" class="btnCompact" :disabled="busy" @click="runTask(refresh)">Refresh</button>
-        <button type="button" class="btnPrimary" :disabled="busy" @click="openCreate">Create</button>
+        <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
     </div>
     <p class="muted tableHint">
@@ -192,33 +192,34 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
             <div v-else class="thumb-placeholder" :class="`thumb-${previewSize}`">N/A</div>
           </td>
           <td class="urlCell">
-            <input v-if="editingImageId === img.id" v-model="editingImage.url" />
+            <input v-if="editingImageId === img.id" v-model="editingImage.url" class="inputInlineEdit wide" />
             <span v-else>{{ img.url }}</span>
           </td>
           <td>
-            <input v-if="editingImageId === img.id" v-model="editingImage.source" />
+            <input v-if="editingImageId === img.id" v-model="editingImage.source" class="inputInlineEdit" />
             <span v-else>{{ img.source || '-' }}</span>
           </td>
           <td>
-            <input v-if="editingImageId === img.id" v-model="editingImage.guild_id" />
+            <input v-if="editingImageId === img.id" v-model="editingImage.guild_id" class="inputInlineEdit" />
             <span v-else>{{ img.guild_id || '-' }}</span>
           </td>
           <td>
-            <input v-if="editingImageId === img.id" v-model="editingImage.album_id" />
+            <input v-if="editingImageId === img.id" v-model="editingImage.album_id" class="inputInlineEdit" />
             <span v-else>{{ img.album_id || '-' }}</span>
           </td>
           <td>
-            <input v-if="editingImageId === img.id" v-model="editingImage.file_id" />
+            <input v-if="editingImageId === img.id" v-model="editingImage.file_id" class="inputInlineEdit" />
             <span v-else>{{ img.file_id || '-' }}</span>
           </td>
           <td class="actions">
             <template v-if="editingImageId === img.id">
-              <button :disabled="busy" @click="runTask(() => onUpdate(img.id))">Save</button>
-              <button type="button" @click="editingImageId = null">Cancel</button>
+              <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="runTask(() => onUpdate(img.id))">Save</button>
+              <button type="button" class="btnCompact" @click="editingImageId = null">Cancel</button>
             </template>
             <template v-else>
               <button
                 type="button"
+                class="btnCompact"
                 @click="
                   editingImageId = img.id;
                   editingImage = {
@@ -229,10 +230,8 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
                     file_id: String(img.file_id || ''),
                   };
                 "
-              >
-                Edit
-              </button>
-              <button type="button" :disabled="busy" @click="runTask(() => onDelete(img.id))">Delete</button>
+              >Edit</button>
+              <button type="button" class="btnCompact btnDanger" :disabled="busy" @click="runTask(() => onDelete(img.id))">Delete</button>
             </template>
           </td>
         </tr>

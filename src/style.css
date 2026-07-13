@@ -158,6 +158,22 @@ body {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* Secondary row below the main toolbar — used for lower-priority controls (e.g. Guild ID). */
+.toolbarSecondary {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid #1e2d4e;
+  margin-bottom: 0.6rem;
+}
+
+:root[data-theme='light'] .toolbarSecondary {
+  border-color: #d7dff2;
 }
 
 .btnPrimary {
@@ -284,6 +300,13 @@ body {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 1rem;
+}
+
+/* All buttons inside a modal actions row share compact sizing. */
+.modalActions button {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.88rem;
+  border-radius: 8px;
 }
 
 :root[data-theme='light'] .toolbarLabel {
@@ -496,12 +519,28 @@ th {
 
 .pagination {
   display: flex;
-  align-items: center;
-  gap: 0.45rem 0.6rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.4rem;
   margin-top: 0.8rem;
   color: #b8c7ea;
   font-size: 0.9rem;
+}
+
+.paginationNav,
+.paginationSettings {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem 0.6rem;
+  flex-wrap: wrap;
+}
+
+.paginationSettings {
+  padding-top: 0.25rem;
+  border-top: 1px solid #1e2d4e;
+}
+
+:root[data-theme='light'] .paginationSettings {
+  border-color: #d7dff2;
 }
 
 .pagination .pageLabel {
@@ -532,6 +571,20 @@ th {
   padding: 0.38rem 0.45rem;
   font-size: 0.88rem;
   border-radius: 8px;
+}
+
+/* Used for inline edit inputs inside table cells — consistent width and compact height. */
+.inputInlineEdit {
+  width: 100%;
+  min-width: 6rem;
+  max-width: 16rem;
+  padding: 0.38rem 0.45rem;
+  font-size: 0.88rem;
+  border-radius: 8px;
+}
+
+.inputInlineEdit.wide {
+  max-width: 100%;
 }
 
 .inputGrow {
@@ -576,6 +629,20 @@ th {
 :root[data-theme='light'] .effectiveCard {
   background: #f6f9ff;
   border-color: #c5d1ee;
+}
+
+.effectiveRow {
+  margin: 0 0 0.4rem;
+  color: #8a9bc4;
+  font-size: 0.86rem;
+}
+
+.effectiveRow:last-child {
+  margin-bottom: 0;
+}
+
+:root[data-theme='light'] .effectiveRow {
+  color: #5a6a90;
 }
 
 .status {

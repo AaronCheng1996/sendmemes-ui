@@ -162,14 +162,16 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
         <input v-model="filterTextInput" class="inputGrow" placeholder="Filter query…" @keydown.enter="applyFilter" />
         <button type="button" class="btnCompact" :disabled="busy" @click="applyFilter">Apply filter</button>
       </div>
-      <label class="toolbarLabel toolbarGuild">
-        Guild ID <span class="mutedInline">(for test send / schedule DB row)</span>
-        <input v-model="guildForSchedule" class="inputGrow guildInput" placeholder="optional" title="Passed as guild_id when sending a test message" />
-      </label>
       <div class="toolbarActions">
         <button type="button" class="btnCompact" :disabled="busy" @click="runTask(refresh)">Refresh</button>
-        <button type="button" class="btnPrimary" :disabled="busy" @click="openCreate">Create</button>
+        <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
+    </div>
+    <div class="toolbarSecondary">
+      <label class="toolbarLabel">
+        Guild ID <span class="mutedInline">(for test send / schedule DB row)</span>
+        <input v-model="guildForSchedule" class="inputGrow" placeholder="optional" title="Passed as guild_id when sending a test message" />
+      </label>
     </div>
     <p class="muted tableHint">Filter and sort apply to <strong>all rows</strong> in the database; this table shows one page of results.</p>
 
@@ -218,7 +220,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
             <div v-else class="thumb-placeholder" :class="`thumb-${previewSize}`">empty</div>
           </td>
           <td>
-            <input v-if="editingAlbumId === a.id" v-model="editingAlbumName" />
+            <input v-if="editingAlbumId === a.id" v-model="editingAlbumName" class="inputInlineEdit" />
             <span v-else>{{ a.name }}</span>
           </td>
           <td>
@@ -233,15 +235,13 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
           <td>{{ a.positive_rating ?? 0 }}</td>
           <td class="actions">
             <template v-if="editingAlbumId === a.id">
-              <button type="button" :disabled="busy" @click="runTask(() => onUpdate(a.id))">Save</button>
-              <button type="button" @click="editingAlbumId = null">Cancel</button>
+              <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="runTask(() => onUpdate(a.id))">Save</button>
+              <button type="button" class="btnCompact" @click="editingAlbumId = null">Cancel</button>
             </template>
             <template v-else>
-              <button type="button" @click="startEdit(a)">Edit</button>
-              <button type="button" class="btnCompact" title="Send a test message to the schedule channel (caption [TEST] …)" :disabled="busy" @click="runTask(() => onSendTest(a.id))">
-                Send test
-              </button>
-              <button type="button" :disabled="busy" @click="runTask(() => onDelete(a.id))">Delete</button>
+              <button type="button" class="btnCompact" @click="startEdit(a)">Edit</button>
+              <button type="button" class="btnCompact" title="Send a test message to the schedule channel (caption [TEST] …)" :disabled="busy" @click="runTask(() => onSendTest(a.id))">Send test</button>
+              <button type="button" class="btnCompact btnDanger" :disabled="busy" @click="runTask(() => onDelete(a.id))">Delete</button>
             </template>
           </td>
         </tr>
@@ -287,19 +287,10 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
 </template>
 
 <style scoped>
-.toolbarGuild {
-  flex: 0 1 220px;
-  min-width: 160px;
-}
-
 .mutedInline {
   font-weight: 400;
   color: #8a9bc4;
   font-size: 0.78rem;
-}
-
-.guildInput {
-  max-width: 100%;
 }
 
 .sendModeSelect {

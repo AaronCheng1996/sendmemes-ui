@@ -52,34 +52,40 @@ const rangeEnd = computed(() => Math.min(props.total, props.offset + props.limit
 
 <template>
   <div class="pagination">
-    <button type="button" :disabled="busy || currentPage <= 1" @click="goTo(1)">«</button>
-    <button type="button" :disabled="busy || currentPage <= 1" @click="goTo(currentPage - 1)">‹</button>
-    <span class="pageLabel">Page {{ currentPage }} / {{ totalPages }}</span>
-    <button type="button" :disabled="busy || currentPage >= totalPages" @click="goTo(currentPage + 1)">›</button>
-    <button type="button" :disabled="busy || currentPage >= totalPages" @click="goTo(totalPages)">»</button>
-    <label class="paginationJump">
-      <span class="paginationJumpLabel">Go to</span>
-      <input
-        v-model="jumpInput"
-        class="inputCompact"
-        type="number"
-        :min="1"
-        :max="totalPages"
-        :disabled="busy"
-        title="Page number"
-        @keydown.enter.prevent="submitJump"
-      />
-      <button type="button" class="btnCompact" :disabled="busy" @click="submitJump">Go</button>
-    </label>
-    <select class="selectCompact" :value="limit" :disabled="busy" @change="changeLimit">
-      <option v-for="n in sizeOptions" :key="n" :value="n">{{ n }} / page</option>
-    </select>
-    <select v-model="previewSize" class="selectCompact" :disabled="busy" title="Preview thumbnail size">
-      <option value="off">Preview: Off</option>
-      <option value="small">Preview: Small</option>
-      <option value="medium">Preview: Medium</option>
-      <option value="large">Preview: Large</option>
-    </select>
-    <span class="pageInfo">{{ rangeStart }}–{{ rangeEnd }} of {{ total }}</span>
+    <!-- Row 1: navigation -->
+    <div class="paginationNav">
+      <button type="button" class="btnCompact" :disabled="busy || currentPage <= 1" @click="goTo(1)">«</button>
+      <button type="button" class="btnCompact" :disabled="busy || currentPage <= 1" @click="goTo(currentPage - 1)">‹</button>
+      <span class="pageLabel">Page {{ currentPage }} / {{ totalPages }}</span>
+      <button type="button" class="btnCompact" :disabled="busy || currentPage >= totalPages" @click="goTo(currentPage + 1)">›</button>
+      <button type="button" class="btnCompact" :disabled="busy || currentPage >= totalPages" @click="goTo(totalPages)">»</button>
+      <label class="paginationJump">
+        <span class="paginationJumpLabel">Go to</span>
+        <input
+          v-model="jumpInput"
+          class="inputCompact"
+          type="number"
+          :min="1"
+          :max="totalPages"
+          :disabled="busy"
+          title="Page number"
+          @keydown.enter.prevent="submitJump"
+        />
+        <button type="button" class="btnCompact" :disabled="busy" @click="submitJump">Go</button>
+      </label>
+      <span class="pageInfo">{{ rangeStart }}–{{ rangeEnd }} of {{ total }}</span>
+    </div>
+    <!-- Row 2: settings -->
+    <div class="paginationSettings">
+      <select class="selectCompact" :value="limit" :disabled="busy" @change="changeLimit">
+        <option v-for="n in sizeOptions" :key="n" :value="n">{{ n }} / page</option>
+      </select>
+      <select v-model="previewSize" class="selectCompact" :disabled="busy" title="Preview thumbnail size">
+        <option value="off">Preview: Off</option>
+        <option value="small">Preview: Small</option>
+        <option value="medium">Preview: Medium</option>
+        <option value="large">Preview: Large</option>
+      </select>
+    </div>
   </div>
 </template>
