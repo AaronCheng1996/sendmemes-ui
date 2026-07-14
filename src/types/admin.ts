@@ -37,9 +37,24 @@ export type EffectiveSchedule = {
   send_channel_id: string
   send_interval: string
   send_history_size: number
+  notify_channel_id: string
   source_send_channel_id: string
   source_send_interval: string
   source_send_history_size: string
+  source_notify_channel_id: string
+}
+
+export type SyncEventType = 'album_created' | 'files_added'
+
+export type SyncEvent = {
+  id: number
+  event_type: SyncEventType
+  album_id?: number
+  album_name: string
+  new_images: number
+  new_videos: number
+  file_names?: string[]
+  created_at: string
 }
 
 export type ManualScheduleTriggerResult = {

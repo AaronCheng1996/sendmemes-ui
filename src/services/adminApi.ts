@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumSendMode, EffectiveSchedule, Image, ManualScheduleTriggerResult, Page } from '../types/admin'
+import type { Album, AlbumSendMode, EffectiveSchedule, Image, ManualScheduleTriggerResult, Page, SyncEvent } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -160,6 +160,15 @@ export async function putSchedule(payload: {
   send_channel_id: string
   send_interval: string
   send_history_size: number
+  notify_channel_id: string
 }) {
   return adminFetch('/v1/admin/schedule', { method: 'PUT', body: JSON.stringify(payload) })
+}
+
+/** Sync discovery events (new albums / new files), newest first. */
+export async function listSyncEvents(p: { offset?: number; limit?: number } = {}) {
+  const sp = new URLSearchParams()
+  sp.set('offset', String(p.offset ?? 0))
+  sp.set('limit', String(p.limit ?? 50))
+  return (await adminFetch(`/v1/admin/sync-events?${sp}`)) as Page<SyncEvent>
 }

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { ADMIN_KEY_SESSION } from '../composables/useConnection'
+import ActivityPage from '../views/ActivityPage.vue'
 import AlbumsPage from '../views/AlbumsPage.vue'
 import ConnectionPage from '../views/ConnectionPage.vue'
 import ImagesPage from '../views/ImagesPage.vue'
@@ -19,6 +20,7 @@ const router = createRouter({
     { path: '/albums', component: AlbumsPage },
     { path: '/images', component: ImagesPage },
     { path: '/schedule', component: SchedulePage },
+    { path: '/activity', component: ActivityPage },
     { path: '/connection', component: ConnectionPage },
   ],
 })

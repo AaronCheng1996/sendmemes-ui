@@ -14,6 +14,7 @@ const form = ref({
   send_channel_id: '',
   send_interval: '6h',
   send_history_size: 10,
+  notify_channel_id: '',
 })
 
 async function runTask(task: () => Promise<void>) {
@@ -35,6 +36,7 @@ async function load() {
     send_channel_id: data.send_channel_id || '',
     send_interval: data.send_interval || '6h',
     send_history_size: data.send_history_size || 10,
+    notify_channel_id: data.notify_channel_id || '',
   }
 }
 
@@ -65,6 +67,7 @@ onMounted(() => runTask(load))
       <p class="effectiveRow">channel: <b>{{ effective.send_channel_id }}</b> <span class="sourceHint">({{ effective.source_send_channel_id }})</span></p>
       <p class="effectiveRow">interval: <b>{{ effective.send_interval }}</b> <span class="sourceHint">({{ effective.source_send_interval }})</span></p>
       <p class="effectiveRow">history: <b>{{ effective.send_history_size }}</b> <span class="sourceHint">({{ effective.source_send_history_size }})</span></p>
+      <p class="effectiveRow">notify: <b>{{ effective.notify_channel_id || '(disabled)' }}</b> <span class="sourceHint">({{ effective.source_notify_channel_id }})</span></p>
     </div>
 
     <div class="grid2">
@@ -72,6 +75,7 @@ onMounted(() => runTask(load))
       <label class="modalField">send_channel_id <input v-model="form.send_channel_id" /></label>
       <label class="modalField">send_interval <input v-model="form.send_interval" /></label>
       <label class="modalField">send_history_size <input v-model.number="form.send_history_size" type="number" /></label>
+      <label class="modalField">notify_channel_id <input v-model="form.notify_channel_id" placeholder="empty = notifications off" /></label>
     </div>
     <div class="modalActions">
       <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="runTask(save)">Save schedule</button>
