@@ -174,6 +174,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
           <th class="sortable" @click="toggleSort('id')">ID {{ sortLabel('id') }}</th>
           <th v-if="previewSize !== 'off'">Preview</th>
           <th class="sortable" @click="toggleSort('url')">URL {{ sortLabel('url') }}</th>
+          <th>Kind</th>
           <th class="sortable" @click="toggleSort('source')">Source {{ sortLabel('source') }}</th>
           <th class="sortable" @click="toggleSort('guild_id')">Guild ID {{ sortLabel('guild_id') }}</th>
           <th class="sortable" @click="toggleSort('album_id')">Album ID {{ sortLabel('album_id') }}</th>
@@ -185,7 +186,8 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
         <tr v-for="img in images" :key="img.id">
           <td>{{ img.id }}</td>
           <td v-if="previewSize !== 'off'">
-            <span v-if="img.preview_url" class="thumb-wrap">
+            <div v-if="img.kind === 'video'" class="thumb-placeholder" :class="`thumb-${previewSize}`" title="Video file">🎬</div>
+            <span v-else-if="img.preview_url" class="thumb-wrap">
               <img class="thumb" :class="`thumb-${previewSize}`" :src="img.preview_url" :alt="img.url" loading="lazy" />
               <img class="thumb-full" :src="img.preview_url" :alt="img.url" loading="lazy" />
             </span>
@@ -195,6 +197,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
             <input v-if="editingImageId === img.id" v-model="editingImage.url" class="inputInlineEdit wide" />
             <span v-else>{{ img.url }}</span>
           </td>
+          <td>{{ img.kind }}</td>
           <td>
             <input v-if="editingImageId === img.id" v-model="editingImage.source" class="inputInlineEdit" />
             <span v-else>{{ img.source || '-' }}</span>

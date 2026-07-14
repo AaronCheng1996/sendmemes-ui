@@ -228,6 +228,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
               <option value="Order">Order</option>
               <option value="Random">Random</option>
               <option value="Single">Single</option>
+              <option value="Video">Video</option>
               <option value="Custom">Custom</option>
             </select>
             <span v-else>{{ a.send_mode }}</span>
@@ -273,6 +274,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
               <option value="Order">Order</option>
               <option value="Random">Random</option>
               <option value="Single">Single</option>
+              <option value="Video">Video</option>
               <option value="Custom">Custom</option>
             </select>
           </label>

@@ -1,4 +1,6 @@
-export type AlbumSendMode = 'Order' | 'Random' | 'Single' | 'Custom'
+export type AlbumSendMode = 'Order' | 'Random' | 'Single' | 'Video' | 'Custom'
+
+export type MediaKind = 'image' | 'video'
 
 export type Album = {
   id: number
@@ -18,6 +20,8 @@ export type Image = {
   guild_id?: string
   album_id?: number
   file_id?: number
+  kind: MediaKind
+  size_bytes?: number
   preview_url?: string
 }
 
