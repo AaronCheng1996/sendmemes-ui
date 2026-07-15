@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumSendMode, EffectiveSchedule, Image, ManualScheduleTriggerResult, Page, SyncEvent } from '../types/admin'
+import type { Album, AlbumSendMode, DeliveryRule, Image, ManualScheduleTriggerResult, Page, SyncEvent, SyncSettings } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -86,11 +86,11 @@ export async function updateAlbum(id: number, input: { name: string; send_mode: 
   })
 }
 
-/** One-off preview to the configured schedule send channel; optional guild scopes DB schedule row. */
-export async function sendAlbumTest(albumId: number, guildId?: string) {
+/** One-off preview send; empty channel falls back to the first enabled scheduled rule. */
+export async function sendAlbumTest(albumId: number, channelId?: string) {
   return (await adminFetch(`/v1/admin/albums/${albumId}/send-test`, {
     method: 'POST',
-    body: JSON.stringify({ guild_id: guildId?.trim() ?? '' }),
+    body: JSON.stringify({ channel_id: channelId?.trim() ?? '' }),
   })) as ManualScheduleTriggerResult
 }
 
@@ -150,19 +150,52 @@ export async function deleteImage(id: number) {
   return adminFetch(`/v1/admin/images/${id}`, { method: 'DELETE' })
 }
 
-export async function getSchedule(guildID?: string) {
-  const guildQuery = guildID?.trim() ? `?guild_id=${encodeURIComponent(guildID.trim())}` : ''
-  return (await adminFetch(`/v1/admin/schedule${guildQuery}`)) as EffectiveSchedule
+export type DeliveryRuleInput = {
+  name: string
+  guild_id: string
+  trigger_type: string
+  channel_id: string
+  send_interval: string
+  history_size: number
+  enabled: boolean
 }
 
-export async function putSchedule(payload: {
-  guild_id: string
-  send_channel_id: string
-  send_interval: string
-  send_history_size: number
-  notify_channel_id: string
-}) {
-  return adminFetch('/v1/admin/schedule', { method: 'PUT', body: JSON.stringify(payload) })
+export async function listRules() {
+  return (await adminFetch('/v1/admin/delivery-rules')) as DeliveryRule[]
+}
+
+export async function createRule(input: DeliveryRuleInput) {
+  return (await adminFetch('/v1/admin/delivery-rules', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })) as DeliveryRule
+}
+
+export async function updateRule(id: number, input: DeliveryRuleInput) {
+  return (await adminFetch(`/v1/admin/delivery-rules/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })) as DeliveryRule
+}
+
+export async function deleteRule(id: number) {
+  return adminFetch(`/v1/admin/delivery-rules/${id}`, { method: 'DELETE' })
+}
+
+export async function getSyncSettings() {
+  return (await adminFetch('/v1/admin/sync-settings')) as SyncSettings
+}
+
+export async function putSyncSettings(syncInterval: string) {
+  return (await adminFetch('/v1/admin/sync-settings', {
+    method: 'PUT',
+    body: JSON.stringify({ sync_interval: syncInterval.trim() }),
+  })) as SyncSettings
+}
+
+/** Run a pCloud sync immediately; returns the run report. */
+export async function triggerSyncNow() {
+  return adminFetch('/v1/admin/sync/trigger-now', { method: 'POST' })
 }
 
 /** Sync discovery events (new albums / new files), newest first. */

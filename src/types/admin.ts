@@ -32,16 +32,21 @@ export type Page<T> = {
   limit: number
 }
 
-export type EffectiveSchedule = {
+export type TriggerType = 'new_album' | 'new_files' | 'scheduled'
+
+export type DeliveryRule = {
+  id: number
+  name: string
   guild_id: string
-  send_channel_id: string
-  send_interval: string
-  send_history_size: number
-  notify_channel_id: string
-  source_send_channel_id: string
-  source_send_interval: string
-  source_send_history_size: string
-  source_notify_channel_id: string
+  trigger_type: TriggerType
+  channel_id: string
+  send_interval?: string
+  history_size: number
+  enabled: boolean
+}
+
+export type SyncSettings = {
+  sync_interval: string
 }
 
 export type SyncEventType = 'album_created' | 'files_added'

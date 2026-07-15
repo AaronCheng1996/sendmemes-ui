@@ -8,8 +8,6 @@ import { usePageSize } from '../composables/usePageSize'
 import { usePreviewSize } from '../composables/usePreviewSize'
 import Pagination from '../components/Pagination.vue'
 
-const GUILD_SCHEDULE_KEY = 'sendmemes_ui_schedule_guild_id'
-
 const busy = ref(false)
 const { pushToast } = useToast()
 const albums = ref<Album[]>([])
@@ -17,15 +15,6 @@ const total = ref(0)
 const offset = ref(0)
 const limit = usePageSize('sendmemes_ui_albums_page_size', 10)
 const { previewSize } = usePreviewSize()
-
-const guildForSchedule = ref(
-  typeof localStorage !== 'undefined' ? localStorage.getItem(GUILD_SCHEDULE_KEY) ?? '' : '',
-)
-watch(guildForSchedule, (v) => {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(GUILD_SCHEDULE_KEY, v)
-  }
-})
 
 type AlbumSortKey = 'id' | 'name' | 'positive_rating' | 'cover'
 const sortKey = ref<AlbumSortKey>('id')
@@ -118,7 +107,7 @@ async function onUpdate(id: number) {
 }
 
 async function onSendTest(albumId: number) {
-  const res = await sendAlbumTest(albumId, guildForSchedule.value)
+  const res = await sendAlbumTest(albumId)
   const where = res.channel_id ? `channel ${res.channel_id}` : 'configured channel'
   pushToast(`Test sent to ${where} — ${res.album_name ?? 'album'}`, 'success')
 }
@@ -166,12 +155,6 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
         <button type="button" class="btnCompact" :disabled="busy" @click="runTask(refresh)">Refresh</button>
         <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
-    </div>
-    <div class="toolbarSecondary">
-      <label class="toolbarLabel">
-        Guild ID <span class="mutedInline">(for test send / schedule DB row)</span>
-        <input v-model="guildForSchedule" class="inputGrow" placeholder="optional" title="Passed as guild_id when sending a test message" />
-      </label>
     </div>
     <p class="muted tableHint">Filter and sort apply to <strong>all rows</strong> in the database; this table shows one page of results.</p>
 
