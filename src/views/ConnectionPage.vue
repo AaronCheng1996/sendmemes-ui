@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useConnection } from '../composables/useConnection'
 import { useToast } from '../composables/useToast'
+import { getSyncSettings, putSyncSettings, triggerSyncNow } from '../services/adminApi'
 
 const router = useRouter()
 const { pushToast } = useToast()
@@ -79,6 +80,44 @@ function logout() {
   pushToast('Signed out', 'success')
   router.replace('/login')
 }
+
+const syncInterval = ref('')
+
+async function loadSync() {
+  try {
+    const s = await getSyncSettings()
+    syncInterval.value = s.sync_interval
+  } catch {
+    // Ignore — typically not authenticated yet.
+  }
+}
+
+async function saveSync() {
+  busy.value = true
+  try {
+    const s = await putSyncSettings(syncInterval.value)
+    syncInterval.value = s.sync_interval
+    pushToast('Sync interval updated', 'success')
+  } catch (e) {
+    pushToast((e as Error).message, 'error')
+  } finally {
+    busy.value = false
+  }
+}
+
+async function runSyncNow() {
+  busy.value = true
+  try {
+    await triggerSyncNow()
+    pushToast('Sync started', 'success')
+  } catch (e) {
+    pushToast((e as Error).message, 'error')
+  } finally {
+    busy.value = false
+  }
+}
+
+onMounted(loadSync)
 </script>
 
 <template>
@@ -103,6 +142,19 @@ function logout() {
       <button type="button" class="btnCompact" :disabled="busy" @click="checkHealth">Test health</button>
       <span class="healthPill" :class="`health-${health}`">{{ health }}</span>
       <button type="button" class="btnCompact" :disabled="busy || !adminKey" @click="testAdmin">Verify admin key</button>
+    </div>
+
+    <h3 class="subheading">Sync</h3>
+    <p class="muted">How often the bot reconciles pCloud into the database, plus an on-demand run.</p>
+    <div class="grid2">
+      <label>
+        Sync interval (Go duration, e.g. 1h)
+        <input v-model="syncInterval" placeholder="1h" />
+      </label>
+    </div>
+    <div class="row">
+      <button type="button" class="btnCompact btnPrimary" :disabled="busy || !syncInterval.trim()" @click="saveSync">Save interval</button>
+      <button type="button" class="btnCompact" :disabled="busy" @click="runSyncNow">Sync now</button>
     </div>
 
     <h3 class="subheading">Session key</h3>
