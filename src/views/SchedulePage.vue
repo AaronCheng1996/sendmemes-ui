@@ -124,7 +124,7 @@ onMounted(() => runTask(refresh))
         </label>
         <label class="modalField">Channel ID <input v-model="draft.channel_id" placeholder="target channel id" /></label>
         <label class="modalField">Guild ID <input v-model="draft.guild_id" placeholder="optional" /></label>
-        <label v-if="draft.trigger_type === 'scheduled'" class="modalField">Interval <input v-model="draft.send_interval" placeholder="6h" /></label>
+        <label v-if="draft.trigger_type === 'scheduled'" class="modalField">Interval <input v-model="draft.send_interval" placeholder="e.g. 6h or 0 9 * * *" /></label>
         <label v-if="draft.trigger_type === 'scheduled'" class="modalField">History size <input v-model.number="draft.history_size" type="number" /></label>
       </div>
       <div class="modalActions">
@@ -157,7 +157,7 @@ onMounted(() => runTask(refresh))
               </select>
             </td>
             <td><input v-model="editDraft.channel_id" class="inputInlineEdit" /></td>
-            <td><input v-model="editDraft.send_interval" class="inputInlineEdit" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
+            <td><input v-model="editDraft.send_interval" class="inputInlineEdit" placeholder="e.g. 6h or 0 9 * * *" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
             <td><input v-model.number="editDraft.history_size" type="number" class="inputInlineEdit" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
             <td><input v-model="editDraft.enabled" type="checkbox" /></td>
             <td class="actions">

@@ -148,8 +148,8 @@ onMounted(loadSync)
     <p class="muted">How often the bot reconciles pCloud into the database, plus an on-demand run.</p>
     <div class="grid2">
       <label>
-        Sync interval (Go duration, e.g. 1h)
-        <input v-model="syncInterval" placeholder="1h" />
+        Sync interval (Go duration or cron, e.g. 1h or 0 9 * * *)
+        <input v-model="syncInterval" placeholder="e.g. 1h or 0 9 * * *" />
       </label>
     </div>
     <div class="row">
