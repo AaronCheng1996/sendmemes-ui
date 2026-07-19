@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 
 import type { Album, AlbumSendMode } from '../types/admin'
 import { createAlbum, deleteAlbum, listAlbums, sendAlbumTest, updateAlbum } from '../services/adminApi'
+import { useJobs } from '../composables/useJobs'
 import { useToast } from '../composables/useToast'
 import { usePageSize } from '../composables/usePageSize'
 import { usePreviewSize } from '../composables/usePreviewSize'
@@ -10,6 +11,7 @@ import Pagination from '../components/Pagination.vue'
 
 const busy = ref(false)
 const { pushToast } = useToast()
+const { start: startJobs } = useJobs()
 const albums = ref<Album[]>([])
 const total = ref(0)
 const offset = ref(0)
@@ -107,9 +109,9 @@ async function onUpdate(id: number) {
 }
 
 async function onSendTest(albumId: number) {
-  const res = await sendAlbumTest(albumId)
-  const where = res.channel_id ? `channel ${res.channel_id}` : 'configured channel'
-  pushToast(`Test sent to ${where} — ${res.album_name ?? 'album'}`, 'success')
+  await sendAlbumTest(albumId)
+  pushToast('Send test queued — running in the background', 'info')
+  startJobs()
 }
 
 async function onDelete(id: number) {

@@ -69,3 +69,18 @@ export type ManualScheduleTriggerResult = {
   channel_id?: string
   message_id?: string
 }
+
+export type JobStatus = 'running' | 'succeeded' | 'failed'
+
+export type JobKind = 'send_test' | 'schedule_send' | 'sync'
+
+export type Job = {
+  id: string
+  kind: JobKind
+  label: string
+  status: JobStatus
+  started_at: string
+  finished_at?: string
+  error?: string
+  result?: Record<string, unknown>
+}

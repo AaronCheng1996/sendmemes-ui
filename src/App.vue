@@ -3,12 +3,23 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import { useConnection } from './composables/useConnection'
+import { useJobs } from './composables/useJobs'
 import { useToast } from './composables/useToast'
 import ToastStack from './components/ToastStack.vue'
 
 const route = useRoute()
 const { normalizedBase } = useConnection()
 const { pushToast } = useToast()
+const { jobs, running, hasRunning, start: startJobs } = useJobs()
+
+const jobsPanelOpen = ref(false)
+
+function kindLabel(kind: string): string {
+  if (kind === 'send_test') return 'Send test'
+  if (kind === 'schedule_send') return 'Scheduled send'
+  if (kind === 'sync') return 'Sync'
+  return 'Job'
+}
 
 type ThemeMode = 'dark' | 'light'
 type Health = 'unknown' | 'ok' | 'fail'
@@ -28,12 +39,14 @@ onMounted(() => {
   document.documentElement.setAttribute('data-theme', theme.value)
   if (!isLogin.value) {
     checkHealth()
+    startJobs()
   }
 })
 
 watch(isLogin, (login) => {
   if (!login) {
     checkHealth()
+    startJobs()
   }
 })
 
@@ -70,6 +83,22 @@ function toggleTheme() {
           <p>Admin dashboard</p>
         </div>
         <div class="heroActions">
+          <div v-if="jobs.length" class="jobsWrap">
+            <button type="button" class="btnCompact jobsBtn" @click="jobsPanelOpen = !jobsPanelOpen">
+              <span v-if="hasRunning" class="jobsSpinner" aria-hidden="true"></span>
+              {{ hasRunning ? `Running ${running.length}` : 'Jobs' }}
+            </button>
+            <div v-if="jobsPanelOpen" class="panel jobsPanel">
+              <p class="jobsPanelTitle">Background jobs</p>
+              <ul class="jobsList">
+                <li v-for="j in jobs.slice(0, 8)" :key="j.id" class="jobsItem">
+                  <span class="jobsDot" :class="`job-${j.status}`" aria-hidden="true"></span>
+                  <span class="jobsItemLabel">{{ kindLabel(j.kind) }} — {{ j.label || '—' }}</span>
+                  <span class="jobsItemStatus">{{ j.status }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
           <button type="button" class="btnCompact" :disabled="checking" @click="checkHealth">
             {{ checking ? 'Checking...' : 'Check API' }}
           </button>
@@ -90,3 +119,96 @@ function toggleTheme() {
     <ToastStack />
   </main>
 </template>
+
+<style scoped>
+.jobsWrap {
+  position: relative;
+}
+
+.jobsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.jobsSpinner {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: jobsSpin 0.7s linear infinite;
+}
+
+@keyframes jobsSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.jobsPanel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 20;
+  width: 20rem;
+  max-width: 80vw;
+  margin-bottom: 0;
+}
+
+.jobsPanelTitle {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.jobsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.jobsItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.jobsItemLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobsItemStatus {
+  opacity: 0.7;
+  text-transform: capitalize;
+}
+
+.jobsDot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex: none;
+  background: #8aa0c8;
+}
+
+.jobsDot.job-running {
+  background: #5390ff;
+}
+
+.jobsDot.job-succeeded {
+  background: #3ec18b;
+}
+
+.jobsDot.job-failed {
+  background: #ff6b6b;
+}
+</style>

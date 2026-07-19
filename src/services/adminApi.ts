@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumSendMode, DeliveryRule, Image, ManualScheduleTriggerResult, Page, SyncEvent, SyncSettings } from '../types/admin'
+import type { Album, AlbumSendMode, DeliveryRule, Image, Job, Page, SyncEvent, SyncSettings } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -86,12 +86,15 @@ export async function updateAlbum(id: number, input: { name: string; send_mode: 
   })
 }
 
-/** One-off preview send; empty channel falls back to the first enabled scheduled rule. */
+/**
+ * Queue a one-off preview send as a background job; empty channel falls back to
+ * the first enabled scheduled rule. Returns the created (running) job.
+ */
 export async function sendAlbumTest(albumId: number, channelId?: string) {
   return (await adminFetch(`/v1/admin/albums/${albumId}/send-test`, {
     method: 'POST',
     body: JSON.stringify({ channel_id: channelId?.trim() ?? '' }),
-  })) as ManualScheduleTriggerResult
+  })) as Job
 }
 
 export async function deleteAlbum(id: number) {
@@ -193,9 +196,14 @@ export async function putSyncSettings(syncInterval: string) {
   })) as SyncSettings
 }
 
-/** Run a pCloud sync immediately; returns the run report. */
+/** Queue a pCloud sync as a background job; returns the created (running) job. */
 export async function triggerSyncNow() {
-  return adminFetch('/v1/admin/sync/trigger-now', { method: 'POST' })
+  return (await adminFetch('/v1/admin/sync/trigger-now', { method: 'POST' })) as Job
+}
+
+/** Most recent background jobs (send-test / scheduled send / sync), newest first. */
+export async function listJobs() {
+  return (await adminFetch('/v1/admin/jobs')) as Job[]
 }
 
 /** Sync discovery events (new albums / new files), newest first. */

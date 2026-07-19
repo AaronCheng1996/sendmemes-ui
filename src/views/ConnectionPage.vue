@@ -3,11 +3,13 @@ import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useConnection } from '../composables/useConnection'
+import { useJobs } from '../composables/useJobs'
 import { useToast } from '../composables/useToast'
 import { getSyncSettings, putSyncSettings, triggerSyncNow } from '../services/adminApi'
 
 const router = useRouter()
 const { pushToast } = useToast()
+const { start: startJobs } = useJobs()
 const {
   apiBase,
   adminKey,
@@ -109,7 +111,8 @@ async function runSyncNow() {
   busy.value = true
   try {
     await triggerSyncNow()
-    pushToast('Sync started', 'success')
+    pushToast('Sync queued — running in the background', 'info')
+    startJobs()
   } catch (e) {
     pushToast((e as Error).message, 'error')
   } finally {
