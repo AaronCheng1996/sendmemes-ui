@@ -4,25 +4,13 @@ import { onMounted, ref, watch } from 'vue'
 import Pagination from '../components/Pagination.vue'
 import type { SyncEvent } from '../types/admin'
 import { listSyncEvents } from '../services/adminApi'
-import { useToast } from '../composables/useToast'
+import { useAsyncTask } from '../composables/useAsyncTask'
 
-const busy = ref(false)
-const { pushToast } = useToast()
+const { busy, runTask } = useAsyncTask()
 const events = ref<SyncEvent[]>([])
 const total = ref(0)
 const offset = ref(0)
 const limit = ref(50)
-
-async function runTask(task: () => Promise<void>) {
-  busy.value = true
-  try {
-    await task()
-  } catch (error) {
-    pushToast((error as Error).message, 'error')
-  } finally {
-    busy.value = false
-  }
-}
 
 async function refresh() {
   const page = await listSyncEvents({ offset: offset.value, limit: limit.value })

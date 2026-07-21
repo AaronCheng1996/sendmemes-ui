@@ -4,13 +4,15 @@ import { ref, watch } from 'vue'
 import type { Album, AlbumSendMode } from '../types/admin'
 import { createAlbum, deleteAlbum, listAlbums, sendAlbumTest, updateAlbum } from '../services/adminApi'
 import { useJobs } from '../composables/useJobs'
+import { useAsyncTask } from '../composables/useAsyncTask'
 import { useToast } from '../composables/useToast'
 import { usePageSize } from '../composables/usePageSize'
 import { usePreviewSize } from '../composables/usePreviewSize'
 import Pagination from '../components/Pagination.vue'
+import ThumbPreview from '../components/ThumbPreview.vue'
 
-const busy = ref(false)
 const { pushToast } = useToast()
+const { busy, runTask } = useAsyncTask()
 const { start: startJobs } = useJobs()
 const albums = ref<Album[]>([])
 const total = ref(0)
@@ -54,17 +56,6 @@ function toggleSort(key: AlbumSortKey) {
 function sortLabel(key: AlbumSortKey) {
   if (sortKey.value !== key) return ''
   return sortDir.value === 'asc' ? '↑' : '↓'
-}
-
-async function runTask(task: () => Promise<void>) {
-  busy.value = true
-  try {
-    await task()
-  } catch (error) {
-    pushToast((error as Error).message, 'error')
-  } finally {
-    busy.value = false
-  }
 }
 
 async function refresh() {
@@ -198,11 +189,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
             </span>
           </td>
           <td v-if="previewSize !== 'off'">
-            <span v-if="a.preview_url" class="thumb-wrap">
-              <img class="thumb" :class="`thumb-${previewSize}`" :src="a.preview_url" :alt="a.name" loading="lazy" />
-              <img class="thumb-full" :src="a.preview_url" :alt="a.name" loading="lazy" />
-            </span>
-            <div v-else class="thumb-placeholder" :class="`thumb-${previewSize}`">empty</div>
+            <ThumbPreview :src="a.preview_url" :alt="a.name" :size="previewSize" placeholder="empty" />
           </td>
           <td>
             <input v-if="editingAlbumId === a.id" v-model="editingAlbumName" class="inputInlineEdit" />

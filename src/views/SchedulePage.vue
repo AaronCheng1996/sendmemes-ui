@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 
 import type { DeliveryRule, TriggerType } from '../types/admin'
 import { createRule, deleteRule, listRules, updateRule } from '../services/adminApi'
+import { useAsyncTask } from '../composables/useAsyncTask'
 import { useToast } from '../composables/useToast'
 
 const TRIGGERS: TriggerType[] = ['scheduled', 'new_album', 'new_files']
@@ -41,25 +42,14 @@ function toDraft(r: DeliveryRule): RuleDraft {
   }
 }
 
-const busy = ref(false)
 const { pushToast } = useToast()
+const { busy, runTask } = useAsyncTask()
 const rules = ref<DeliveryRule[]>([])
 
 const createOpen = ref(false)
 const draft = ref<RuleDraft>(blankDraft())
 const editingId = ref<number | null>(null)
 const editDraft = ref<RuleDraft>(blankDraft())
-
-async function runTask(task: () => Promise<void>) {
-  busy.value = true
-  try {
-    await task()
-  } catch (error) {
-    pushToast((error as Error).message, 'error')
-  } finally {
-    busy.value = false
-  }
-}
 
 async function refresh() {
   rules.value = await listRules()

@@ -3,13 +3,15 @@ import { ref, watch } from 'vue'
 
 import type { Image } from '../types/admin'
 import { createImage, deleteImage, listImages, updateImage } from '../services/adminApi'
+import { useAsyncTask } from '../composables/useAsyncTask'
 import { useToast } from '../composables/useToast'
 import { usePageSize } from '../composables/usePageSize'
 import { usePreviewSize } from '../composables/usePreviewSize'
 import Pagination from '../components/Pagination.vue'
+import ThumbPreview from '../components/ThumbPreview.vue'
 
-const busy = ref(false)
 const { pushToast } = useToast()
+const { busy, runTask } = useAsyncTask()
 const images = ref<Image[]>([])
 const total = ref(0)
 const offset = ref(0)
@@ -67,17 +69,6 @@ function toggleSort(key: ImageSortKey) {
 function sortLabel(key: ImageSortKey) {
   if (sortKey.value !== key) return ''
   return sortDir.value === 'asc' ? '↑' : '↓'
-}
-
-async function runTask(task: () => Promise<void>) {
-  busy.value = true
-  try {
-    await task()
-  } catch (error) {
-    pushToast((error as Error).message, 'error')
-  } finally {
-    busy.value = false
-  }
 }
 
 async function refresh() {
@@ -186,12 +177,13 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
         <tr v-for="img in images" :key="img.id">
           <td>{{ img.id }}</td>
           <td v-if="previewSize !== 'off'">
-            <div v-if="img.kind === 'video'" class="thumb-placeholder" :class="`thumb-${previewSize}`" title="Video file">🎬</div>
-            <span v-else-if="img.preview_url" class="thumb-wrap">
-              <img class="thumb" :class="`thumb-${previewSize}`" :src="img.preview_url" :alt="img.url" loading="lazy" />
-              <img class="thumb-full" :src="img.preview_url" :alt="img.url" loading="lazy" />
-            </span>
-            <div v-else class="thumb-placeholder" :class="`thumb-${previewSize}`">N/A</div>
+            <ThumbPreview
+              :src="img.kind === 'video' ? undefined : img.preview_url"
+              :alt="img.url"
+              :size="previewSize"
+              :placeholder="img.kind === 'video' ? '🎬' : 'N/A'"
+              :placeholder-title="img.kind === 'video' ? 'Video file' : undefined"
+            />
           </td>
           <td class="urlCell">
             <input v-if="editingImageId === img.id" v-model="editingImage.url" class="inputInlineEdit wide" />
