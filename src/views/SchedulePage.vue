@@ -5,6 +5,7 @@ import type { DeliveryRule, TriggerType } from '../types/admin'
 import { createRule, deleteRule, listRules, updateRule } from '../services/adminApi'
 import { useAsyncTask } from '../composables/useAsyncTask'
 import { useToast } from '../composables/useToast'
+import { formatAbsolute, formatRelative } from '../utils/time'
 
 const TRIGGERS: TriggerType[] = ['scheduled', 'new_album', 'new_files']
 
@@ -68,6 +69,13 @@ function startEdit(r: DeliveryRule) {
   editDraft.value = toDraft(r)
 }
 
+// Server-computed schedule_description/next_run_at for the rule currently
+// being edited (not re-derived client-side as the interval text changes —
+// the preview reflects what's saved, matching the read-only Next column).
+function editingRule(): DeliveryRule | undefined {
+  return rules.value.find((r) => r.id === editingId.value)
+}
+
 async function onUpdate(id: number) {
   await updateRule(id, { ...editDraft.value })
   editingId.value = null
@@ -103,6 +111,8 @@ onMounted(() => runTask(refresh))
       (<code>new_album</code> / <code>new_files</code>). Edits take effect within ~30s.
     </p>
 
+    <div class="progressBar" :class="{ progressBarActive: busy }" role="progressbar" aria-label="Working" :aria-busy="busy"></div>
+
     <div v-if="createOpen" class="panel createBox">
       <div class="grid2">
         <label class="modalField">Name <input v-model="draft.name" placeholder="optional label" /></label>
@@ -123,7 +133,7 @@ onMounted(() => runTask(refresh))
       </div>
     </div>
 
-    <table>
+    <table class="tableResponsive">
       <thead>
         <tr>
           <th>ID</th>
@@ -131,6 +141,7 @@ onMounted(() => runTask(refresh))
           <th>Trigger</th>
           <th>Channel</th>
           <th>Interval</th>
+          <th>Next</th>
           <th>History</th>
           <th>Enabled</th>
           <th>Actions</th>
@@ -138,47 +149,56 @@ onMounted(() => runTask(refresh))
       </thead>
       <tbody>
         <tr v-for="r in rules" :key="r.id">
-          <td>{{ r.id }}</td>
+          <td data-label="ID">{{ r.id }}</td>
           <template v-if="editingId === r.id">
-            <td><input v-model="editDraft.name" class="inputInlineEdit" /></td>
-            <td>
+            <td data-label="Name"><input v-model="editDraft.name" class="inputInlineEdit" /></td>
+            <td data-label="Trigger">
               <select v-model="editDraft.trigger_type" class="selectCompact">
                 <option v-for="t in TRIGGERS" :key="t" :value="t">{{ t }}</option>
               </select>
             </td>
-            <td><input v-model="editDraft.channel_id" class="inputInlineEdit" /></td>
-            <td><input v-model="editDraft.send_interval" class="inputInlineEdit" placeholder="e.g. 6h or 0 9 * * *" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
-            <td><input v-model.number="editDraft.history_size" type="number" class="inputInlineEdit" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
-            <td><input v-model="editDraft.enabled" type="checkbox" /></td>
-            <td class="actions">
+            <td data-label="Channel"><input v-model="editDraft.channel_id" class="inputInlineEdit" /></td>
+            <td data-label="Interval">
+              <input v-model="editDraft.send_interval" class="inputInlineEdit" placeholder="e.g. 6h or 0 9 * * *" :disabled="editDraft.trigger_type !== 'scheduled'" />
+              <p v-if="editDraft.trigger_type === 'scheduled' && editingRule()?.schedule_description" class="scheduleHint">
+                Currently: {{ editingRule()!.schedule_description }}
+                <span v-if="editingRule()!.next_run_at">— next {{ formatRelative(editingRule()!.next_run_at as string) }}</span>
+              </p>
+            </td>
+            <td data-label="Next">-</td>
+            <td data-label="History"><input v-model.number="editDraft.history_size" type="number" class="inputInlineEdit" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
+            <td data-label="Enabled"><input v-model="editDraft.enabled" type="checkbox" /></td>
+            <td class="actions" data-label="Actions">
               <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="runTask(() => onUpdate(r.id))">Save</button>
               <button type="button" class="btnCompact" @click="editingId = null">Cancel</button>
             </td>
           </template>
           <template v-else>
-            <td>{{ r.name || '-' }}</td>
-            <td>{{ r.trigger_type }}</td>
-            <td class="channelCell">{{ r.channel_id }}</td>
-            <td>{{ r.trigger_type === 'scheduled' ? r.send_interval : '-' }}</td>
-            <td>{{ r.trigger_type === 'scheduled' ? r.history_size : '-' }}</td>
-            <td>
+            <td data-label="Name">{{ r.name || '-' }}</td>
+            <td data-label="Trigger">{{ r.trigger_type }}</td>
+            <td class="channelCell" data-label="Channel">{{ r.channel_id }}</td>
+            <td data-label="Interval">{{ r.trigger_type === 'scheduled' ? (r.schedule_description || r.send_interval) : '-' }}</td>
+            <td data-label="Next">
+              <span v-if="r.next_run_at" :title="formatAbsolute(r.next_run_at)">{{ formatRelative(r.next_run_at) }}</span>
+              <span v-else>-</span>
+            </td>
+            <td data-label="History">{{ r.trigger_type === 'scheduled' ? r.history_size : '-' }}</td>
+            <td data-label="Enabled">
               <button type="button" class="btnCompact" :disabled="busy" @click="runTask(() => onToggle(r))">
                 {{ r.enabled ? 'on' : 'off' }}
               </button>
             </td>
-            <td class="actions">
+            <td class="actions" data-label="Actions">
               <button type="button" class="btnCompact" @click="startEdit(r)">Edit</button>
               <button type="button" class="btnCompact btnDanger" :disabled="busy" @click="runTask(() => onDelete(r.id))">Delete</button>
             </td>
           </template>
         </tr>
         <tr v-if="!busy && rules.length === 0">
-          <td colspan="8" class="muted">No delivery rules yet. Create one to start scheduling or notifications.</td>
+          <td colspan="9" class="muted">No delivery rules yet. Create one to start scheduling or notifications.</td>
         </tr>
       </tbody>
     </table>
-
-    <p v-if="busy" class="status">Working...</p>
   </section>
 </template>
 
@@ -189,5 +209,11 @@ onMounted(() => runTask(refresh))
 
 .channelCell {
   font-variant-numeric: tabular-nums;
+}
+
+.scheduleHint {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 </style>

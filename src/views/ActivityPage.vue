@@ -42,7 +42,7 @@ watch([offset, limit], () => runTask(refresh))
       @update:limit="(v: number) => (limit = v)"
     />
 
-    <table>
+    <table class="tableResponsive">
       <thead>
         <tr>
           <th>Time</th>
@@ -55,16 +55,16 @@ watch([offset, limit], () => runTask(refresh))
       </thead>
       <tbody>
         <tr v-for="ev in events" :key="ev.id">
-          <td :title="formatAbsolute(ev.created_at)">{{ formatRelative(ev.created_at) }}</td>
-          <td>
+          <td data-label="Time" :title="formatAbsolute(ev.created_at)">{{ formatRelative(ev.created_at) }}</td>
+          <td data-label="Event">
             <span class="eventBadge" :class="ev.event_type === 'album_created' ? 'eventCreated' : 'eventAdded'">
               {{ ev.event_type === 'album_created' ? 'New album' : 'New files' }}
             </span>
           </td>
-          <td>{{ ev.album_name }}</td>
-          <td>{{ ev.new_images || '-' }}</td>
-          <td>{{ ev.new_videos || '-' }}</td>
-          <td class="fileNames">{{ (ev.file_names ?? []).join(', ') || '-' }}</td>
+          <td data-label="Album">{{ ev.album_name }}</td>
+          <td data-label="New images">{{ ev.new_images || '-' }}</td>
+          <td data-label="New videos">{{ ev.new_videos || '-' }}</td>
+          <td class="fileNames" data-label="Files">{{ (ev.file_names ?? []).join(', ') || '-' }}</td>
         </tr>
         <tr v-if="!busy && events.length === 0">
           <td colspan="6" class="muted">No sync activity recorded yet.</td>

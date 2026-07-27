@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import type { Album, AlbumSendMode } from '../types/admin'
 import { createAlbum, deleteAlbum, listAlbums, sendAlbumTest, updateAlbum } from '../services/adminApi'
@@ -11,6 +12,7 @@ import { usePreviewSize } from '../composables/usePreviewSize'
 import Pagination from '../components/Pagination.vue'
 import ThumbPreview from '../components/ThumbPreview.vue'
 
+const router = useRouter()
 const { pushToast } = useToast()
 const { busy, runTask } = useAsyncTask()
 const { start: startJobs } = useJobs()
@@ -118,6 +120,10 @@ function openCreate() {
   createOpen.value = true
 }
 
+function viewImages(albumId: number) {
+  router.push({ path: '/images', query: { album_id: String(albumId) } })
+}
+
 function startEdit(a: Album) {
   editingAlbumId.value = a.id
   editingAlbumName.value = a.name
@@ -149,6 +155,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
         <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
     </div>
+    <div class="progressBar" :class="{ progressBarActive: busy }" role="progressbar" aria-label="Working" :aria-busy="busy"></div>
     <p class="muted tableHint">Filter and sort apply to <strong>all rows</strong> in the database; this table shows one page of results.</p>
 
     <Pagination
@@ -160,7 +167,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
       @update:limit="(v: number) => (limit = v)"
     />
 
-    <table>
+    <table class="tableResponsive">
       <thead>
         <tr>
           <th class="sortable" @click="toggleSort('id')">ID {{ sortLabel('id') }}</th>
@@ -174,8 +181,8 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
       </thead>
       <tbody>
         <tr v-for="a in albums" :key="a.id">
-          <td>{{ a.id }}</td>
-          <td>
+          <td data-label="ID">{{ a.id }}</td>
+          <td data-label="Cover">
             <span v-if="a.has_cover" class="coverIcon has" :title="`Cover image #${a.cover_image_id ?? ''}`">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" fill="currentColor" />
@@ -188,14 +195,14 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
               </svg>
             </span>
           </td>
-          <td v-if="previewSize !== 'off'">
+          <td v-if="previewSize !== 'off'" data-label="Preview">
             <ThumbPreview :src="a.preview_url" :alt="a.name" :size="previewSize" placeholder="empty" />
           </td>
-          <td>
+          <td data-label="Name">
             <input v-if="editingAlbumId === a.id" v-model="editingAlbumName" class="inputInlineEdit" />
             <span v-else>{{ a.name }}</span>
           </td>
-          <td>
+          <td data-label="Send mode">
             <select v-if="editingAlbumId === a.id" v-model="editingAlbumSendMode" class="selectCompact sendModeSelect">
               <option value="Order">Order</option>
               <option value="Random">Random</option>
@@ -205,13 +212,14 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
             </select>
             <span v-else>{{ a.send_mode }}</span>
           </td>
-          <td>{{ a.positive_rating ?? 0 }}</td>
-          <td class="actions">
+          <td data-label="Rating">{{ a.positive_rating ?? 0 }}</td>
+          <td class="actions" data-label="Actions">
             <template v-if="editingAlbumId === a.id">
               <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="runTask(() => onUpdate(a.id))">Save</button>
               <button type="button" class="btnCompact" @click="editingAlbumId = null">Cancel</button>
             </template>
             <template v-else>
+              <button type="button" class="btnCompact" @click="viewImages(a.id)">View images</button>
               <button type="button" class="btnCompact" @click="startEdit(a)">Edit</button>
               <button type="button" class="btnCompact" title="Send a test message to the schedule channel (caption [TEST] …)" :disabled="busy" @click="runTask(() => onSendTest(a.id))">Send test</button>
               <button type="button" class="btnCompact btnDanger" :disabled="busy" @click="runTask(() => onDelete(a.id))">Delete</button>
@@ -229,8 +237,6 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
       @update:offset="(v: number) => (offset = v)"
       @update:limit="(v: number) => (limit = v)"
     />
-
-    <p v-if="busy" class="status">Working...</p>
 
     <Teleport to="body">
       <div v-if="createOpen" class="modalBackdrop" @click.self="createOpen = false">

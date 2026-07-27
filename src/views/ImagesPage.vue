@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import type { Image } from '../types/admin'
 import { createImage, deleteImage, listImages, updateImage } from '../services/adminApi'
@@ -10,6 +11,8 @@ import { usePreviewSize } from '../composables/usePreviewSize'
 import Pagination from '../components/Pagination.vue'
 import ThumbPreview from '../components/ThumbPreview.vue'
 
+const route = useRoute()
+const router = useRouter()
 const { pushToast } = useToast()
 const { busy, runTask } = useAsyncTask()
 const images = ref<Image[]>([])
@@ -20,6 +23,9 @@ const { previewSize } = usePreviewSize()
 
 const apiAlbumIdInput = ref('')
 const apiAlbumId = ref('')
+// Set when the album scope came from a route query (Albums page "View images"
+// link) so it can be shown as a clearable badge distinct from manual filtering.
+const scopedFromRoute = ref(false)
 
 type ImageSortKey = 'id' | 'album_id' | 'url' | 'source' | 'guild_id' | 'file_id'
 const sortKey = ref<ImageSortKey>('id')
@@ -54,6 +60,31 @@ function applyFilters() {
   filterField.value = filterFieldInput.value
   filterText.value = filterTextInput.value
   offset.value = 0
+}
+
+// Keep the album scope in sync with ?album_id=… so the Albums page's "View
+// images" link (and browser back/forward) both work as expected.
+function syncAlbumScopeFromRoute() {
+  const q = route.query.album_id
+  const id = typeof q === 'string' ? q : ''
+  apiAlbumIdInput.value = id
+  apiAlbumId.value = id
+  scopedFromRoute.value = id !== ''
+}
+
+syncAlbumScopeFromRoute()
+
+watch(() => route.query.album_id, syncAlbumScopeFromRoute)
+
+function clearAlbumScope() {
+  apiAlbumIdInput.value = ''
+  apiAlbumId.value = ''
+  scopedFromRoute.value = false
+  if (route.query.album_id !== undefined) {
+    const query = { ...route.query }
+    delete query.album_id
+    router.replace({ path: route.path, query })
+  }
 }
 
 function toggleSort(key: ImageSortKey) {
@@ -146,9 +177,17 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
         <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
     </div>
+    <div v-if="scopedFromRoute" class="toolbarSecondary">
+      <span class="scopeBadge">
+        Scoped to album #{{ apiAlbumId }}
+        <button type="button" class="btnCompact scopeBadgeClear" @click="clearAlbumScope">Clear ×</button>
+      </span>
+    </div>
     <p class="muted tableHint">
       Album ID limits rows to one album; filter and sort apply to <strong>all matching rows</strong> before pagination.
     </p>
+
+    <div class="progressBar" :class="{ progressBarActive: busy }" role="progressbar" aria-label="Working" :aria-busy="busy"></div>
 
     <Pagination
       :total="total"
@@ -159,7 +198,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
       @update:limit="(v: number) => (limit = v)"
     />
 
-    <table>
+    <table class="tableResponsive">
       <thead>
         <tr>
           <th class="sortable" @click="toggleSort('id')">ID {{ sortLabel('id') }}</th>
@@ -175,8 +214,8 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
       </thead>
       <tbody>
         <tr v-for="img in images" :key="img.id">
-          <td>{{ img.id }}</td>
-          <td v-if="previewSize !== 'off'">
+          <td data-label="ID">{{ img.id }}</td>
+          <td v-if="previewSize !== 'off'" data-label="Preview">
             <ThumbPreview
               :src="img.kind === 'video' ? undefined : img.preview_url"
               :alt="img.url"
@@ -185,28 +224,28 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
               :placeholder-title="img.kind === 'video' ? 'Video file' : undefined"
             />
           </td>
-          <td class="urlCell">
+          <td class="urlCell" data-label="URL">
             <input v-if="editingImageId === img.id" v-model="editingImage.url" class="inputInlineEdit wide" />
             <span v-else>{{ img.url }}</span>
           </td>
-          <td>{{ img.kind }}</td>
-          <td>
+          <td data-label="Kind">{{ img.kind }}</td>
+          <td data-label="Source">
             <input v-if="editingImageId === img.id" v-model="editingImage.source" class="inputInlineEdit" />
             <span v-else>{{ img.source || '-' }}</span>
           </td>
-          <td>
+          <td data-label="Guild ID">
             <input v-if="editingImageId === img.id" v-model="editingImage.guild_id" class="inputInlineEdit" />
             <span v-else>{{ img.guild_id || '-' }}</span>
           </td>
-          <td>
+          <td data-label="Album ID">
             <input v-if="editingImageId === img.id" v-model="editingImage.album_id" class="inputInlineEdit" />
             <span v-else>{{ img.album_id || '-' }}</span>
           </td>
-          <td>
+          <td data-label="File ID">
             <input v-if="editingImageId === img.id" v-model="editingImage.file_id" class="inputInlineEdit" />
             <span v-else>{{ img.file_id || '-' }}</span>
           </td>
-          <td class="actions">
+          <td class="actions" data-label="Actions">
             <template v-if="editingImageId === img.id">
               <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="runTask(() => onUpdate(img.id))">Save</button>
               <button type="button" class="btnCompact" @click="editingImageId = null">Cancel</button>
@@ -241,8 +280,6 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
       @update:offset="(v: number) => (offset = v)"
       @update:limit="(v: number) => (limit = v)"
     />
-
-    <p v-if="busy" class="status">Working...</p>
 
     <Teleport to="body">
       <div v-if="createOpen" class="modalBackdrop" @click.self="createOpen = false">
