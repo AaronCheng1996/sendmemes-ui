@@ -161,6 +161,7 @@ export type DeliveryRuleInput = {
   send_interval: string
   history_size: number
   enabled: boolean
+  caption_template: string
 }
 
 export async function listRules() {

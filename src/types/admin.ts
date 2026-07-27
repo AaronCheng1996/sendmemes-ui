@@ -43,6 +43,7 @@ export type DeliveryRule = {
   send_interval?: string
   history_size: number
   enabled: boolean
+  caption_template?: string
   /** Computed on read for scheduled rules only; never persisted. */
   next_run_at?: string
   schedule_description?: string

@@ -17,6 +17,7 @@ type RuleDraft = {
   send_interval: string
   history_size: number
   enabled: boolean
+  caption_template: string
 }
 
 function blankDraft(): RuleDraft {
@@ -28,6 +29,7 @@ function blankDraft(): RuleDraft {
     send_interval: '6h',
     history_size: 10,
     enabled: true,
+    caption_template: '',
   }
 }
 
@@ -40,6 +42,7 @@ function toDraft(r: DeliveryRule): RuleDraft {
     send_interval: r.send_interval ?? '',
     history_size: r.history_size,
     enabled: r.enabled,
+    caption_template: r.caption_template ?? '',
   }
 }
 
@@ -127,6 +130,13 @@ onMounted(() => runTask(refresh))
         <label v-if="draft.trigger_type === 'scheduled'" class="modalField">Interval <input v-model="draft.send_interval" placeholder="e.g. 6h or 0 9 * * *" /></label>
         <label v-if="draft.trigger_type === 'scheduled'" class="modalField">History size <input v-model.number="draft.history_size" type="number" /></label>
       </div>
+      <label v-if="draft.trigger_type === 'scheduled'" class="modalField">
+        Caption template (optional)
+        <textarea v-model="draft.caption_template" rows="2" placeholder="e.g. {prefix}{album} — {count}/{total} pieces, rated {rating}"></textarea>
+      </label>
+      <p v-if="draft.trigger_type === 'scheduled'" class="muted captionHint">
+        Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>. Leave empty to use the default caption.
+      </p>
       <div class="modalActions">
         <button type="button" class="btnCompact" @click="createOpen = false">Cancel</button>
         <button type="button" class="btnCompact btnPrimary" :disabled="busy || !draft.channel_id.trim()" @click="runTask(onCreate)">Create</button>
@@ -164,6 +174,17 @@ onMounted(() => runTask(refresh))
                 Currently: {{ editingRule()!.schedule_description }}
                 <span v-if="editingRule()!.next_run_at">— next {{ formatRelative(editingRule()!.next_run_at as string) }}</span>
               </p>
+              <template v-if="editDraft.trigger_type === 'scheduled'">
+                <textarea
+                  v-model="editDraft.caption_template"
+                  class="inputInlineEdit captionTextarea"
+                  rows="2"
+                  placeholder="Caption template (optional), e.g. {prefix}{album} — {count}/{total}"
+                ></textarea>
+                <p class="muted captionHint">
+                  Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>
+                </p>
+              </template>
             </td>
             <td data-label="Next">-</td>
             <td data-label="History"><input v-model.number="editDraft.history_size" type="number" class="inputInlineEdit" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
@@ -215,5 +236,21 @@ onMounted(() => runTask(refresh))
   margin: 0.3rem 0 0;
   font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+.captionTextarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  resize: vertical;
+}
+
+.captionHint {
+  margin: 0.3rem 0 0;
+  font-size: 0.76rem;
+}
+
+.captionHint code {
+  font-size: 0.76rem;
 }
 </style>
