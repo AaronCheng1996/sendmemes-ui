@@ -5,6 +5,7 @@ import Pagination from '../components/Pagination.vue'
 import type { SyncEvent } from '../types/admin'
 import { listSyncEvents } from '../services/adminApi'
 import { useAsyncTask } from '../composables/useAsyncTask'
+import { formatAbsolute, formatRelative } from '../utils/time'
 
 const { busy, runTask } = useAsyncTask()
 const events = ref<SyncEvent[]>([])
@@ -16,11 +17,6 @@ async function refresh() {
   const page = await listSyncEvents({ offset: offset.value, limit: limit.value })
   events.value = page.items
   total.value = page.total
-}
-
-function fmtTime(iso: string): string {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString()
 }
 
 onMounted(() => runTask(refresh))
@@ -59,7 +55,7 @@ watch([offset, limit], () => runTask(refresh))
       </thead>
       <tbody>
         <tr v-for="ev in events" :key="ev.id">
-          <td>{{ fmtTime(ev.created_at) }}</td>
+          <td :title="formatAbsolute(ev.created_at)">{{ formatRelative(ev.created_at) }}</td>
           <td>
             <span class="eventBadge" :class="ev.event_type === 'album_created' ? 'eventCreated' : 'eventAdded'">
               {{ ev.event_type === 'album_created' ? 'New album' : 'New files' }}
@@ -79,34 +75,6 @@ watch([offset, limit], () => runTask(refresh))
 </template>
 
 <style scoped>
-.eventBadge {
-  display: inline-block;
-  padding: 0.12rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  border: 1px solid #2b3d66;
-}
-
-.eventCreated {
-  color: #7ee0a3;
-  border-color: #2e5c41;
-}
-
-.eventAdded {
-  color: #8fb7f2;
-  border-color: #2b4a7a;
-}
-
-:root[data-theme='light'] .eventCreated {
-  color: #1f7a44;
-  border-color: #9ed4b4;
-}
-
-:root[data-theme='light'] .eventAdded {
-  color: #24589c;
-  border-color: #aac6ec;
-}
-
 .fileNames {
   max-width: 26rem;
   overflow-wrap: anywhere;

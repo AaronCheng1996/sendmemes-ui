@@ -43,6 +43,9 @@ export type DeliveryRule = {
   send_interval?: string
   history_size: number
   enabled: boolean
+  /** Computed on read for scheduled rules only; never persisted. */
+  next_run_at?: string
+  schedule_description?: string
 }
 
 export type SyncSettings = {
@@ -68,6 +71,20 @@ export type ManualScheduleTriggerResult = {
   album_name?: string
   channel_id?: string
   message_id?: string
+}
+
+export type SystemStatus = {
+  server_time: string
+  database_status: string
+  discord_connected: boolean
+  discord_user?: string
+  sync_interval: string
+  rule_count: number
+  next_scheduled_run?: string
+  last_sync_at?: string
+  album_count: number
+  image_count: number
+  video_count: number
 }
 
 export type JobStatus = 'running' | 'succeeded' | 'failed'

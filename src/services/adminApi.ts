@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumSendMode, DeliveryRule, Image, Job, Page, SyncEvent, SyncSettings } from '../types/admin'
+import type { Album, AlbumSendMode, DeliveryRule, Image, Job, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -212,4 +212,9 @@ export async function listSyncEvents(p: { offset?: number; limit?: number } = {}
   sp.set('offset', String(p.offset ?? 0))
   sp.set('limit', String(p.limit ?? 50))
   return (await adminFetch(`/v1/admin/sync-events?${sp}`)) as Page<SyncEvent>
+}
+
+/** Runtime status + counters for the overview dashboard. */
+export async function getSystemStatus() {
+  return (await adminFetch('/v1/admin/system/status')) as SystemStatus
 }

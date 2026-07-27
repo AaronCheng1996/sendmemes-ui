@@ -6,6 +6,7 @@ import AlbumsPage from '../views/AlbumsPage.vue'
 import ConnectionPage from '../views/ConnectionPage.vue'
 import ImagesPage from '../views/ImagesPage.vue'
 import LoginPage from '../views/LoginPage.vue'
+import OverviewPage from '../views/OverviewPage.vue'
 import SchedulePage from '../views/SchedulePage.vue'
 
 function readLoggedIn(): boolean {
@@ -15,7 +16,7 @@ function readLoggedIn(): boolean {
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/albums' },
+    { path: '/', component: OverviewPage },
     { path: '/login', component: LoginPage, meta: { public: true } },
     { path: '/albums', component: AlbumsPage },
     { path: '/images', component: ImagesPage },
@@ -29,7 +30,7 @@ router.beforeEach((to) => {
   const isPublic = to.meta.public === true
   const ok = readLoggedIn()
   if (isPublic) {
-    if (to.path === '/login' && ok) return { path: '/albums' }
+    if (to.path === '/login' && ok) return { path: '/' }
     return true
   }
   if (!ok) {

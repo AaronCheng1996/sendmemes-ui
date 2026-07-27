@@ -578,7 +578,37 @@ tbody tr:hover {
   color: var(--text-muted);
 }
 
-/* --------------------------------------------------------------- cards -- */
+/* -------------------------------------------------------------- badges -- */
+
+.eventBadge {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  border: 1px solid #2b3d66;
+}
+
+.eventCreated {
+  color: #7ee0a3;
+  border-color: #2e5c41;
+}
+
+.eventAdded {
+  color: #8fb7f2;
+  border-color: #2b4a7a;
+}
+
+:root[data-theme='light'] .eventCreated {
+  color: #1f7a44;
+  border-color: #9ed4b4;
+}
+
+:root[data-theme='light'] .eventAdded {
+  color: #24589c;
+  border-color: #aac6ec;
+}
+
+/* -------------------------------------------------------------- cards -- */
 
 .effectiveCard {
   background: var(--surface-alt);
@@ -596,6 +626,68 @@ tbody tr:hover {
 
 .effectiveRow:last-child {
   margin-bottom: 0;
+}
+
+.statGrid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1rem;
+}
+
+.statValue {
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.statLabel {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.listReset {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scheduleItem,
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.scheduleItemName,
+.activityItemAlbum {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.scheduleItemNext {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.activityItemTime {
+  margin-left: auto;
 }
 
 .healthPill {
@@ -773,6 +865,10 @@ tbody tr:hover {
   }
 
   .grid5 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .statGrid {
     grid-template-columns: 1fr 1fr;
   }
 

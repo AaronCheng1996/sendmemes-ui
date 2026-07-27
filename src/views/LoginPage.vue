@@ -23,8 +23,8 @@ async function onSubmit() {
   try {
     await probeAdminAuth(apiBase.value, key)
     setSessionKey(key)
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/albums'
-    await router.replace(redirect || '/albums')
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    await router.replace(redirect || '/')
     pushToast('Signed in', 'success')
   } catch (e) {
     pushToast((e as Error).message, 'error')
