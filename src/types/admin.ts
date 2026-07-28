@@ -11,6 +11,9 @@ export type Album = {
   send_config_json?: string
   positive_rating?: number
   preview_url?: string
+  /** Set when a sync no longer finds the album's source folder; such albums are
+   *  skipped by scheduled delivery until the folder reappears. */
+  missing_since?: string
 }
 
 export type Image = {

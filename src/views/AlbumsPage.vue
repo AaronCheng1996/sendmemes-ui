@@ -11,6 +11,7 @@ import { usePageSize } from '../composables/usePageSize'
 import { usePreviewSize } from '../composables/usePreviewSize'
 import Pagination from '../components/Pagination.vue'
 import ThumbPreview from '../components/ThumbPreview.vue'
+import { formatAbsolute } from '../utils/time'
 
 const router = useRouter()
 const { pushToast } = useToast()
@@ -250,7 +251,14 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
           </td>
           <td data-label="Name">
             <input v-if="editingAlbumId === a.id" v-model="editingAlbumName" class="inputInlineEdit" />
-            <span v-else>{{ a.name }}</span>
+            <template v-else>
+              <span>{{ a.name }}</span>
+              <span
+                v-if="a.missing_since"
+                class="missingBadge"
+                :title="`Source folder not found since ${formatAbsolute(a.missing_since)} — skipped by scheduled sends until it reappears`"
+              >missing</span>
+            </template>
           </td>
           <td data-label="Send mode">
             <select v-if="editingAlbumId === a.id" v-model="editingAlbumSendMode" class="selectCompact sendModeSelect">

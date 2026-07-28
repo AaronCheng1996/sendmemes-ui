@@ -613,6 +613,22 @@ tbody tr:hover {
   pointer-events: none;
 }
 
+/* Flags an album whose source folder vanished: it keeps its rating and config
+   but is skipped by scheduled delivery until the folder comes back. */
+.missingBadge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  cursor: help;
+}
+
 .coverIcon {
   display: inline-flex;
   align-items: center;
