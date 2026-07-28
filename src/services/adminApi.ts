@@ -3,8 +3,9 @@ import type { Album, AlbumSendMode, DeliveryRule, Image, Job, Page, SyncEvent, S
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
-function albumWritePayload(input: { name: string; send_mode: AlbumSendMode }) {
-  return { ...input, send_config_json: EMPTY_ALBUM_CONFIG }
+function albumWritePayload(input: { name: string; send_mode: AlbumSendMode; send_config_json?: string }) {
+  const sendConfigJSON = input.send_config_json?.trim() || EMPTY_ALBUM_CONFIG
+  return { name: input.name, send_mode: input.send_mode, send_config_json: sendConfigJSON }
 }
 
 function ensureNumber(v: string): number {
@@ -72,14 +73,14 @@ export async function listAlbums(p: AlbumListParams = {}) {
   return (await adminFetch(`/v1/admin/albums?${sp}`)) as Page<Album>
 }
 
-export async function createAlbum(input: { name: string; send_mode: AlbumSendMode }) {
+export async function createAlbum(input: { name: string; send_mode: AlbumSendMode; send_config_json?: string }) {
   return adminFetch('/v1/admin/albums', {
     method: 'POST',
     body: JSON.stringify(albumWritePayload(input)),
   })
 }
 
-export async function updateAlbum(id: number, input: { name: string; send_mode: AlbumSendMode }) {
+export async function updateAlbum(id: number, input: { name: string; send_mode: AlbumSendMode; send_config_json?: string }) {
   return adminFetch(`/v1/admin/albums/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(albumWritePayload(input)),

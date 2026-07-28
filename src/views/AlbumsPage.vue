@@ -34,10 +34,28 @@ const filterText = ref('')
 
 const newAlbumName = ref('')
 const newAlbumSendMode = ref<AlbumSendMode>('Random')
+const newAlbumSendConfigJSON = ref('')
 const createOpen = ref(false)
 const editingAlbumId = ref<number | null>(null)
 const editingAlbumName = ref('')
 const editingAlbumSendMode = ref<AlbumSendMode>('Random')
+const editingAlbumSendConfigJSON = ref('')
+
+const SEND_CONFIG_HINT = 'JSON overrides: batch_size, include_cover, ordered, caption, nsfw. Leave empty for defaults.'
+const configEditAlbum = ref<Album | null>(null)
+const configEditJSON = ref('')
+const configEditError = ref('')
+
+function isValidJSON(raw: string): boolean {
+  const trimmed = raw.trim()
+  if (!trimmed) return true
+  try {
+    JSON.parse(trimmed)
+    return true
+  } catch {
+    return false
+  }
+}
 
 function applyFilter() {
   filterField.value = filterFieldInput.value
@@ -77,13 +95,16 @@ async function refresh() {
 
 async function onCreate() {
   if (!newAlbumName.value.trim()) return
+  if (!isValidJSON(newAlbumSendConfigJSON.value)) return
   await createAlbum({
     name: newAlbumName.value.trim(),
     send_mode: newAlbumSendMode.value,
+    send_config_json: newAlbumSendConfigJSON.value,
   })
   pushToast('Album created', 'success')
   newAlbumName.value = ''
   newAlbumSendMode.value = 'Random'
+  newAlbumSendConfigJSON.value = ''
   createOpen.value = false
   await refresh()
 }
@@ -93,11 +114,38 @@ async function onUpdate(id: number) {
   await updateAlbum(id, {
     name: editingAlbumName.value.trim(),
     send_mode: editingAlbumSendMode.value,
+    // Inline row editing only touches name/mode; carry the existing config
+    // through untouched (edited separately via the Config modal).
+    send_config_json: editingAlbumSendConfigJSON.value,
   })
   pushToast('Album updated', 'success')
   editingAlbumId.value = null
   editingAlbumName.value = ''
   editingAlbumSendMode.value = 'Random'
+  editingAlbumSendConfigJSON.value = ''
+  await refresh()
+}
+
+function openConfigEdit(a: Album) {
+  configEditAlbum.value = a
+  configEditJSON.value = a.send_config_json ?? ''
+  configEditError.value = ''
+}
+
+async function onSaveConfig() {
+  const album = configEditAlbum.value
+  if (!album) return
+  if (!isValidJSON(configEditJSON.value)) {
+    configEditError.value = 'Not valid JSON.'
+    return
+  }
+  await updateAlbum(album.id, {
+    name: album.name,
+    send_mode: album.send_mode,
+    send_config_json: configEditJSON.value,
+  })
+  pushToast('Album config updated', 'success')
+  configEditAlbum.value = null
   await refresh()
 }
 
@@ -117,6 +165,7 @@ async function onDelete(id: number) {
 function openCreate() {
   newAlbumName.value = ''
   newAlbumSendMode.value = 'Random'
+  newAlbumSendConfigJSON.value = ''
   createOpen.value = true
 }
 
@@ -128,6 +177,7 @@ function startEdit(a: Album) {
   editingAlbumId.value = a.id
   editingAlbumName.value = a.name
   editingAlbumSendMode.value = (a.send_mode as AlbumSendMode) ?? 'Random'
+  editingAlbumSendConfigJSON.value = a.send_config_json ?? ''
 }
 
 watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
@@ -221,6 +271,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
             <template v-else>
               <button type="button" class="btnCompact" @click="viewImages(a.id)">View images</button>
               <button type="button" class="btnCompact" @click="startEdit(a)">Edit</button>
+              <button type="button" class="btnCompact" title="Edit send_config_json (batch size, cover, order, caption, NSFW)" @click="openConfigEdit(a)">Config</button>
               <button type="button" class="btnCompact" title="Send a test message to the schedule channel (caption [TEST] …)" :disabled="busy" @click="runTask(() => onSendTest(a.id))">Send test</button>
               <button type="button" class="btnCompact btnDanger" :disabled="busy" @click="runTask(() => onDelete(a.id))">Delete</button>
             </template>
@@ -256,9 +307,33 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
               <option value="Custom">Custom</option>
             </select>
           </label>
+          <label class="modalField">
+            Send config (optional)
+            <textarea v-model="newAlbumSendConfigJSON" rows="3" class="configTextarea" placeholder='{"batch_size": 5, "ordered": true}'></textarea>
+            <span class="mutedInline">{{ SEND_CONFIG_HINT }}</span>
+            <span v-if="!isValidJSON(newAlbumSendConfigJSON)" class="configError">Not valid JSON.</span>
+          </label>
           <div class="modalActions">
             <button type="button" @click="createOpen = false">Cancel</button>
-            <button type="button" class="btnPrimary" :disabled="busy || !newAlbumName.trim()" @click="runTask(onCreate)">Create</button>
+            <button type="button" class="btnPrimary" :disabled="busy || !newAlbumName.trim() || !isValidJSON(newAlbumSendConfigJSON)" @click="runTask(onCreate)">Create</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="configEditAlbum" class="modalBackdrop" @click.self="configEditAlbum = null">
+        <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="configEditTitle">
+          <h3 id="configEditTitle" class="modalTitle">Send config — {{ configEditAlbum.name }}</h3>
+          <label class="modalField">
+            send_config_json
+            <textarea v-model="configEditJSON" rows="6" class="configTextarea" placeholder='{"batch_size": 5, "ordered": true}'></textarea>
+            <span class="mutedInline">{{ SEND_CONFIG_HINT }}</span>
+            <span v-if="configEditError" class="configError">{{ configEditError }}</span>
+          </label>
+          <div class="modalActions">
+            <button type="button" @click="configEditAlbum = null">Cancel</button>
+            <button type="button" class="btnPrimary" :disabled="busy" @click="runTask(onSaveConfig)">Save</button>
           </div>
         </div>
       </div>
@@ -276,5 +351,16 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
 .sendModeSelect {
   min-width: 7rem;
   max-width: 100%;
+}
+
+.configTextarea {
+  font-family: monospace;
+  font-size: 0.82rem;
+  resize: vertical;
+}
+
+.configError {
+  color: var(--danger-text);
+  font-size: 0.78rem;
 }
 </style>
