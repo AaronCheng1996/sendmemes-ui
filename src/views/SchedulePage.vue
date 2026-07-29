@@ -7,6 +7,7 @@ import { useAsyncTask } from '../composables/useAsyncTask'
 import { useJobs } from '../composables/useJobs'
 import { useToast } from '../composables/useToast'
 import { formatAbsolute, formatRelative } from '../utils/time'
+import PlaceholderHint from '../components/PlaceholderHint.vue'
 
 const TRIGGERS: TriggerType[] = ['scheduled', 'new_album', 'new_files']
 
@@ -213,7 +214,7 @@ onMounted(() => runTask(refresh))
       </div>
       <label class="modalField">
         Body (optional)
-        <textarea v-model="draft.body" rows="2" placeholder="e.g. {prefix}{album} — {count}/{total} pieces, rated {rating}"></textarea>
+        <textarea v-model="draft.body" rows="2" placeholder="e.g. {album} — {shown} of {album_total}, rated {rating}"></textarea>
       </label>
       <details v-if="draft.use_embed !== 'off'" class="embedOptions">
         <summary>Embed options</summary>
@@ -248,8 +249,8 @@ onMounted(() => runTask(refresh))
           </label>
         </div>
       </details>
+      <PlaceholderHint :trigger="draft.trigger_type" />
       <p class="muted captionHint">
-        Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>.
         Empty fields inherit the app defaults; an album's own config overrides both.
       </p>
       <div class="modalActions">
@@ -303,7 +304,7 @@ onMounted(() => runTask(refresh))
                 v-model="editDraft.body"
                 class="inputInlineEdit captionTextarea"
                 rows="2"
-                placeholder="Body (optional), e.g. {prefix}{album} — {count}/{total}"
+                placeholder="Body (optional), e.g. {album} — {shown}/{album_total}"
               ></textarea>
               <details v-if="editDraft.use_embed !== 'off'" class="embedOptions">
                 <summary>Embed options</summary>
@@ -327,9 +328,7 @@ onMounted(() => runTask(refresh))
                   <option value="off">Timestamp: hide</option>
                 </select>
               </details>
-              <p class="muted captionHint">
-                Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>
-              </p>
+              <PlaceholderHint :trigger="editDraft.trigger_type" />
             </td>
             <td data-label="Next">-</td>
             <td data-label="History"><input v-model.number="editDraft.history_size" type="number" class="inputInlineEdit" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>

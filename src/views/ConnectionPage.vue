@@ -6,6 +6,7 @@ import { useConnection } from '../composables/useConnection'
 import { useJobs } from '../composables/useJobs'
 import { useToast } from '../composables/useToast'
 import { getSyncSettings, putMessageDefaults, putSyncSettings, triggerSyncNow } from '../services/adminApi'
+import PlaceholderHint from '../components/PlaceholderHint.vue'
 
 const router = useRouter()
 const { pushToast } = useToast()
@@ -216,9 +217,7 @@ onMounted(loadSync)
         <input v-model="defaultColor" placeholder="#5390ff — empty = per send mode" />
       </label>
     </div>
-    <p class="muted">
-      Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>
-    </p>
+    <PlaceholderHint />
     <div class="row">
       <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="saveMessageDefaults">Save message defaults</button>
     </div>
