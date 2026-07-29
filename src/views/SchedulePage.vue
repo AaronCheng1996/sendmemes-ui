@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
-import type { DeliveryRule, TriggerType } from '../types/admin'
-import { createRule, deleteRule, listRules, updateRule } from '../services/adminApi'
+import type { DeliveryRule, MessageStyle, TriggerType } from '../types/admin'
+import { createRule, deleteRule, listRules, testRule, updateRule } from '../services/adminApi'
 import { useAsyncTask } from '../composables/useAsyncTask'
+import { useJobs } from '../composables/useJobs'
 import { useToast } from '../composables/useToast'
 import { formatAbsolute, formatRelative } from '../utils/time'
 
@@ -17,23 +18,48 @@ type RuleDraft = {
   send_interval: string
   history_size: number
   enabled: boolean
-  caption_template: string
-  title_template: string
-  /** Tri-state as a select value: inherit the app default, or force on/off. */
-  use_embed: 'inherit' | 'on' | 'off'
+  /** Tri-state selects: inherit the layer below, or force on/off. */
+  use_embed: Tri
+  title: string
+  body: string
+  color: string
+  footer: string
+  author: string
+  url: string
+  show_image: Tri
+  show_thumbnail: Tri
+  show_timestamp: Tri
 }
 
-/** Maps the tri-state select to the API's boolean | null. */
-function embedToApi(v: RuleDraft['use_embed']): boolean | null {
+/** Every optional flag is a tri-state so "inherit" stays distinct from "off". */
+type Tri = 'inherit' | 'on' | 'off'
+
+function triToApi(v: Tri): boolean | null {
   if (v === 'on') return true
   if (v === 'off') return false
   return null
 }
 
-function embedFromApi(v: boolean | null | undefined): RuleDraft['use_embed'] {
+function triFromApi(v: boolean | null | undefined): Tri {
   if (v === true) return 'on'
   if (v === false) return 'off'
   return 'inherit'
+}
+
+/** Builds the API payload, dropping empty fields so they keep inheriting. */
+function draftToStyle(d: RuleDraft): MessageStyle {
+  return {
+    use_embed: triToApi(d.use_embed),
+    title: d.title,
+    body: d.body,
+    color: d.color,
+    footer: d.footer,
+    author: d.author,
+    url: d.url,
+    show_image: triToApi(d.show_image),
+    show_thumbnail: triToApi(d.show_thumbnail),
+    show_timestamp: triToApi(d.show_timestamp),
+  }
 }
 
 function blankDraft(): RuleDraft {
@@ -45,9 +71,16 @@ function blankDraft(): RuleDraft {
     send_interval: '6h',
     history_size: 10,
     enabled: true,
-    caption_template: '',
-    title_template: '',
     use_embed: 'inherit',
+    title: '',
+    body: '',
+    color: '',
+    footer: '',
+    author: '',
+    url: '',
+    show_image: 'inherit',
+    show_thumbnail: 'inherit',
+    show_timestamp: 'inherit',
   }
 }
 
@@ -60,13 +93,21 @@ function toDraft(r: DeliveryRule): RuleDraft {
     send_interval: r.send_interval ?? '',
     history_size: r.history_size,
     enabled: r.enabled,
-    caption_template: r.caption_template ?? '',
-    title_template: r.title_template ?? '',
-    use_embed: embedFromApi(r.use_embed),
+    use_embed: triFromApi(r.message_style?.use_embed),
+    title: r.message_style?.title ?? '',
+    body: r.message_style?.body ?? '',
+    color: r.message_style?.color ?? '',
+    footer: r.message_style?.footer ?? '',
+    author: r.message_style?.author ?? '',
+    url: r.message_style?.url ?? '',
+    show_image: triFromApi(r.message_style?.show_image),
+    show_thumbnail: triFromApi(r.message_style?.show_thumbnail),
+    show_timestamp: triFromApi(r.message_style?.show_timestamp),
   }
 }
 
 const { pushToast } = useToast()
+const { start: startJobs } = useJobs()
 const { busy, runTask } = useAsyncTask()
 const rules = ref<DeliveryRule[]>([])
 
@@ -80,7 +121,7 @@ async function refresh() {
 }
 
 async function onCreate() {
-  await createRule({ ...draft.value, use_embed: embedToApi(draft.value.use_embed) })
+  await createRule({ ...draft.value, message_style: draftToStyle(draft.value) })
   createOpen.value = false
   draft.value = blankDraft()
   await refresh()
@@ -100,10 +141,16 @@ function editingRule(): DeliveryRule | undefined {
 }
 
 async function onUpdate(id: number) {
-  await updateRule(id, { ...editDraft.value, use_embed: embedToApi(editDraft.value.use_embed) })
+  await updateRule(id, { ...editDraft.value, message_style: draftToStyle(editDraft.value) })
   editingId.value = null
   await refresh()
   pushToast('Rule updated', 'success')
+}
+
+async function onTest(r: DeliveryRule) {
+  await testRule(r.id)
+  pushToast('Rule preview queued — running in the background', 'info')
+  startJobs()
 }
 
 async function onDelete(id: number) {
@@ -113,7 +160,7 @@ async function onDelete(id: number) {
 }
 
 async function onToggle(r: DeliveryRule) {
-  await updateRule(r.id, { ...toDraft(r), enabled: !r.enabled, use_embed: embedToApi(embedFromApi(r.use_embed)) })
+  await updateRule(r.id, { ...toDraft(r), enabled: !r.enabled, message_style: draftToStyle(toDraft(r)) })
   await refresh()
 }
 
@@ -161,13 +208,46 @@ onMounted(() => runTask(refresh))
         </label>
         <label class="modalField">
           Title (optional)
-          <input v-model="draft.title_template" placeholder="e.g. 📢 {album}" />
+          <input v-model="draft.title" placeholder="e.g. 📢 {album}" />
         </label>
       </div>
       <label class="modalField">
         Body (optional)
-        <textarea v-model="draft.caption_template" rows="2" placeholder="e.g. {prefix}{album} — {count}/{total} pieces, rated {rating}"></textarea>
+        <textarea v-model="draft.body" rows="2" placeholder="e.g. {prefix}{album} — {count}/{total} pieces, rated {rating}"></textarea>
       </label>
+      <details v-if="draft.use_embed !== 'off'" class="embedOptions">
+        <summary>Embed options</summary>
+        <div class="grid2">
+          <label class="modalField">Color <input v-model="draft.color" placeholder="#5390ff" /></label>
+          <label class="modalField">Link URL <input v-model="draft.url" placeholder="https://…" /></label>
+          <label class="modalField">Footer <input v-model="draft.footer" placeholder="default: album #12 · Random" /></label>
+          <label class="modalField">Author <input v-model="draft.author" placeholder="small line above the title" /></label>
+          <label class="modalField">
+            Large image
+            <select v-model="draft.show_image" class="selectCompact">
+              <option value="inherit">Inherit</option>
+              <option value="on">Show</option>
+              <option value="off">Hide</option>
+            </select>
+          </label>
+          <label class="modalField">
+            Thumbnail
+            <select v-model="draft.show_thumbnail" class="selectCompact">
+              <option value="inherit">Inherit</option>
+              <option value="on">Show</option>
+              <option value="off">Hide</option>
+            </select>
+          </label>
+          <label class="modalField">
+            Timestamp
+            <select v-model="draft.show_timestamp" class="selectCompact">
+              <option value="inherit">Inherit</option>
+              <option value="on">Show</option>
+              <option value="off">Hide</option>
+            </select>
+          </label>
+        </div>
+      </details>
       <p class="muted captionHint">
         Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>.
         Empty fields inherit the app defaults; an album's own config overrides both.
@@ -215,16 +295,38 @@ onMounted(() => runTask(refresh))
                 <option value="off">Plain text</option>
               </select>
               <input
-                v-model="editDraft.title_template"
+                v-model="editDraft.title"
                 class="inputInlineEdit"
                 placeholder="Title (optional), e.g. 📢 {album}"
               />
               <textarea
-                v-model="editDraft.caption_template"
+                v-model="editDraft.body"
                 class="inputInlineEdit captionTextarea"
                 rows="2"
                 placeholder="Body (optional), e.g. {prefix}{album} — {count}/{total}"
               ></textarea>
+              <details v-if="editDraft.use_embed !== 'off'" class="embedOptions">
+                <summary>Embed options</summary>
+                <input v-model="editDraft.color" class="inputInlineEdit" placeholder="Color, e.g. #5390ff" />
+                <input v-model="editDraft.footer" class="inputInlineEdit" placeholder="Footer (optional)" />
+                <input v-model="editDraft.author" class="inputInlineEdit" placeholder="Author (optional)" />
+                <input v-model="editDraft.url" class="inputInlineEdit" placeholder="Link URL (optional)" />
+                <select v-model="editDraft.show_image" class="selectCompact">
+                  <option value="inherit">Image: inherit</option>
+                  <option value="on">Image: show</option>
+                  <option value="off">Image: hide</option>
+                </select>
+                <select v-model="editDraft.show_thumbnail" class="selectCompact">
+                  <option value="inherit">Thumbnail: inherit</option>
+                  <option value="on">Thumbnail: show</option>
+                  <option value="off">Thumbnail: hide</option>
+                </select>
+                <select v-model="editDraft.show_timestamp" class="selectCompact">
+                  <option value="inherit">Timestamp: inherit</option>
+                  <option value="on">Timestamp: show</option>
+                  <option value="off">Timestamp: hide</option>
+                </select>
+              </details>
               <p class="muted captionHint">
                 Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>
               </p>
@@ -253,6 +355,7 @@ onMounted(() => runTask(refresh))
               </button>
             </td>
             <td class="actions" data-label="Actions">
+              <button type="button" class="btnCompact" :disabled="busy" title="Post a preview styled by this rule" @click="runTask(() => onTest(r))">Test</button>
               <button type="button" class="btnCompact" @click="startEdit(r)">Edit</button>
               <button type="button" class="btnCompact btnDanger" :disabled="busy" @click="runTask(() => onDelete(r.id))">Delete</button>
             </td>
@@ -269,6 +372,17 @@ onMounted(() => runTask(refresh))
 <style scoped>
 .createBox {
   margin-bottom: 0.8rem;
+}
+
+.embedOptions {
+  margin-bottom: 0.6rem;
+  font-size: 0.88rem;
+}
+
+.embedOptions summary {
+  cursor: pointer;
+  color: var(--text-label);
+  margin-bottom: 0.4rem;
 }
 
 .channelCell {

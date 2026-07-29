@@ -90,14 +90,16 @@ const syncInterval = ref('')
 const defaultUseEmbed = ref<'on' | 'off'>('on')
 const defaultTitle = ref('')
 const defaultBody = ref('')
+const defaultColor = ref('')
 
 async function loadSync() {
   try {
     const s = await getSyncSettings()
     syncInterval.value = s.sync_interval
-    defaultUseEmbed.value = s.default_use_embed === false ? 'off' : 'on'
-    defaultTitle.value = s.default_title ?? ''
-    defaultBody.value = s.default_body ?? ''
+    defaultUseEmbed.value = s.message_style?.use_embed === false ? 'off' : 'on'
+    defaultTitle.value = s.message_style?.title ?? ''
+    defaultBody.value = s.message_style?.body ?? ''
+    defaultColor.value = s.message_style?.color ?? ''
   } catch {
     // Ignore — typically not authenticated yet.
   }
@@ -136,6 +138,7 @@ async function saveMessageDefaults() {
       use_embed: defaultUseEmbed.value === 'on',
       title: defaultTitle.value,
       body: defaultBody.value,
+      color: defaultColor.value,
     })
     pushToast('Message defaults updated', 'success')
   } catch (e) {
@@ -207,6 +210,10 @@ onMounted(loadSync)
       <label>
         Default body (optional)
         <input v-model="defaultBody" placeholder="empty = built-in caption" />
+      </label>
+      <label>
+        Embed color (optional)
+        <input v-model="defaultColor" placeholder="#5390ff — empty = per send mode" />
       </label>
     </div>
     <p class="muted">

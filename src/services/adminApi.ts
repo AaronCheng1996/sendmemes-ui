@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumSendMode, DeliveryRule, MessageDefaults, Image, Job, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
+import type { Album, AlbumSendMode, DeliveryRule, Image, Job, MessageStyle, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -162,9 +162,7 @@ export type DeliveryRuleInput = {
   send_interval: string
   history_size: number
   enabled: boolean
-  caption_template: string
-  title_template: string
-  use_embed: boolean | null
+  message_style: MessageStyle
 }
 
 export async function listRules() {
@@ -224,9 +222,20 @@ export async function getSystemStatus() {
 }
 
 /** App-wide message presentation defaults (the bottom style layer). */
-export async function putMessageDefaults(defaults: MessageDefaults) {
+export async function putMessageDefaults(style: MessageStyle) {
   return (await adminFetch('/v1/admin/message-defaults', {
     method: 'PUT',
-    body: JSON.stringify(defaults),
+    body: JSON.stringify({ message_style: style }),
   })) as SyncSettings
+}
+
+/**
+ * Queue a preview of one delivery rule, styled exactly as that rule would style
+ * it. Works for event rules too, which otherwise only fire from a sync.
+ */
+export async function testRule(id: number, albumId?: number) {
+  return (await adminFetch(`/v1/admin/delivery-rules/${id}/test`, {
+    method: 'POST',
+    body: JSON.stringify({ album_id: albumId ?? 0 }),
+  })) as Job
 }

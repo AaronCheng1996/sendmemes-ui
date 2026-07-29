@@ -46,12 +46,8 @@ export type DeliveryRule = {
   send_interval?: string
   history_size: number
   enabled: boolean
-  /** Message body. Empty inherits the app default. */
-  caption_template?: string
-  /** Headline. Empty inherits the app default. */
-  title_template?: string
-  /** null/undefined inherits the app default. */
-  use_embed?: boolean | null
+  /** Presentation overrides; unset fields inherit the app defaults. */
+  message_style?: MessageStyle
   /** Computed on read for scheduled rules only; never persisted. */
   next_run_at?: string
   schedule_description?: string
@@ -59,16 +55,25 @@ export type DeliveryRule = {
 
 export type SyncSettings = {
   sync_interval: string
-  default_use_embed?: boolean | null
-  default_title?: string
-  default_body?: string
+  message_style?: MessageStyle
 }
 
-/** One layer of message presentation; app defaults → rule → album. */
-export type MessageDefaults = {
-  use_embed: boolean | null
-  title: string
-  body: string
+/**
+ * One layer of message presentation; layers merge per field in the order
+ * app defaults → delivery rule → album. An omitted key means "inherit".
+ */
+export type MessageStyle = {
+  use_embed?: boolean | null
+  title?: string
+  body?: string
+  /** Embed-only options, ignored when the resolved format is plain text. */
+  color?: string
+  footer?: string
+  author?: string
+  url?: string
+  show_image?: boolean | null
+  show_thumbnail?: boolean | null
+  show_timestamp?: boolean | null
 }
 
 export type SyncEventType = 'album_created' | 'files_added'
