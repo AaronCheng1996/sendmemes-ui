@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumSendMode, DeliveryRule, Image, Job, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
+import type { Album, AlbumSendMode, DeliveryRule, MessageDefaults, Image, Job, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -163,6 +163,8 @@ export type DeliveryRuleInput = {
   history_size: number
   enabled: boolean
   caption_template: string
+  title_template: string
+  use_embed: boolean | null
 }
 
 export async function listRules() {
@@ -219,4 +221,12 @@ export async function listSyncEvents(p: { offset?: number; limit?: number } = {}
 /** Runtime status + counters for the overview dashboard. */
 export async function getSystemStatus() {
   return (await adminFetch('/v1/admin/system/status')) as SystemStatus
+}
+
+/** App-wide message presentation defaults (the bottom style layer). */
+export async function putMessageDefaults(defaults: MessageDefaults) {
+  return (await adminFetch('/v1/admin/message-defaults', {
+    method: 'PUT',
+    body: JSON.stringify(defaults),
+  })) as SyncSettings
 }

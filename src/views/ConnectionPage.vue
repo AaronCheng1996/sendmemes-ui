@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { useConnection } from '../composables/useConnection'
 import { useJobs } from '../composables/useJobs'
 import { useToast } from '../composables/useToast'
-import { getSyncSettings, putSyncSettings, triggerSyncNow } from '../services/adminApi'
+import { getSyncSettings, putMessageDefaults, putSyncSettings, triggerSyncNow } from '../services/adminApi'
 
 const router = useRouter()
 const { pushToast } = useToast()
@@ -85,10 +85,19 @@ function logout() {
 
 const syncInterval = ref('')
 
+// App-wide message defaults — the bottom layer of the style stack; delivery
+// rules and albums override these per field.
+const defaultUseEmbed = ref<'on' | 'off'>('on')
+const defaultTitle = ref('')
+const defaultBody = ref('')
+
 async function loadSync() {
   try {
     const s = await getSyncSettings()
     syncInterval.value = s.sync_interval
+    defaultUseEmbed.value = s.default_use_embed === false ? 'off' : 'on'
+    defaultTitle.value = s.default_title ?? ''
+    defaultBody.value = s.default_body ?? ''
   } catch {
     // Ignore — typically not authenticated yet.
   }
@@ -113,6 +122,22 @@ async function runSyncNow() {
     await triggerSyncNow()
     pushToast('Sync queued — running in the background', 'info')
     startJobs()
+  } catch (e) {
+    pushToast((e as Error).message, 'error')
+  } finally {
+    busy.value = false
+  }
+}
+
+async function saveMessageDefaults() {
+  busy.value = true
+  try {
+    await putMessageDefaults({
+      use_embed: defaultUseEmbed.value === 'on',
+      title: defaultTitle.value,
+      body: defaultBody.value,
+    })
+    pushToast('Message defaults updated', 'success')
   } catch (e) {
     pushToast((e as Error).message, 'error')
   } finally {
@@ -158,6 +183,37 @@ onMounted(loadSync)
     <div class="row">
       <button type="button" class="btnCompact btnPrimary" :disabled="busy || !syncInterval.trim()" @click="saveSync">Save interval</button>
       <button type="button" class="btnCompact" :disabled="busy" @click="runSyncNow">Sync now</button>
+    </div>
+
+    <h3 class="subheading">Message defaults</h3>
+    <p class="muted">
+      The bottom layer of message presentation. Delivery rules override these per field,
+      and an album's own config overrides both.
+    </p>
+    <div class="grid2">
+      <label>
+        Format
+        <select v-model="defaultUseEmbed" class="selectCompact">
+          <option value="on">Embed</option>
+          <option value="off">Plain text</option>
+        </select>
+      </label>
+      <label>
+        Default title (optional)
+        <input v-model="defaultTitle" placeholder="empty = album name" />
+      </label>
+    </div>
+    <div class="grid2">
+      <label>
+        Default body (optional)
+        <input v-model="defaultBody" placeholder="empty = built-in caption" />
+      </label>
+    </div>
+    <p class="muted">
+      Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>
+    </p>
+    <div class="row">
+      <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="saveMessageDefaults">Save message defaults</button>
     </div>
 
     <h3 class="subheading">Session key</h3>

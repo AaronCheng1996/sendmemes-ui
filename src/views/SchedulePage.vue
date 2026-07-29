@@ -18,6 +18,22 @@ type RuleDraft = {
   history_size: number
   enabled: boolean
   caption_template: string
+  title_template: string
+  /** Tri-state as a select value: inherit the app default, or force on/off. */
+  use_embed: 'inherit' | 'on' | 'off'
+}
+
+/** Maps the tri-state select to the API's boolean | null. */
+function embedToApi(v: RuleDraft['use_embed']): boolean | null {
+  if (v === 'on') return true
+  if (v === 'off') return false
+  return null
+}
+
+function embedFromApi(v: boolean | null | undefined): RuleDraft['use_embed'] {
+  if (v === true) return 'on'
+  if (v === false) return 'off'
+  return 'inherit'
 }
 
 function blankDraft(): RuleDraft {
@@ -30,6 +46,8 @@ function blankDraft(): RuleDraft {
     history_size: 10,
     enabled: true,
     caption_template: '',
+    title_template: '',
+    use_embed: 'inherit',
   }
 }
 
@@ -43,6 +61,8 @@ function toDraft(r: DeliveryRule): RuleDraft {
     history_size: r.history_size,
     enabled: r.enabled,
     caption_template: r.caption_template ?? '',
+    title_template: r.title_template ?? '',
+    use_embed: embedFromApi(r.use_embed),
   }
 }
 
@@ -60,7 +80,7 @@ async function refresh() {
 }
 
 async function onCreate() {
-  await createRule({ ...draft.value })
+  await createRule({ ...draft.value, use_embed: embedToApi(draft.value.use_embed) })
   createOpen.value = false
   draft.value = blankDraft()
   await refresh()
@@ -80,7 +100,7 @@ function editingRule(): DeliveryRule | undefined {
 }
 
 async function onUpdate(id: number) {
-  await updateRule(id, { ...editDraft.value })
+  await updateRule(id, { ...editDraft.value, use_embed: embedToApi(editDraft.value.use_embed) })
   editingId.value = null
   await refresh()
   pushToast('Rule updated', 'success')
@@ -93,7 +113,7 @@ async function onDelete(id: number) {
 }
 
 async function onToggle(r: DeliveryRule) {
-  await updateRule(r.id, { ...toDraft(r), enabled: !r.enabled })
+  await updateRule(r.id, { ...toDraft(r), enabled: !r.enabled, use_embed: embedToApi(embedFromApi(r.use_embed)) })
   await refresh()
 }
 
@@ -130,12 +150,27 @@ onMounted(() => runTask(refresh))
         <label v-if="draft.trigger_type === 'scheduled'" class="modalField">Interval <input v-model="draft.send_interval" placeholder="e.g. 6h or 0 9 * * *" /></label>
         <label v-if="draft.trigger_type === 'scheduled'" class="modalField">History size <input v-model.number="draft.history_size" type="number" /></label>
       </div>
-      <label v-if="draft.trigger_type === 'scheduled'" class="modalField">
-        Caption template (optional)
+      <div class="grid2">
+        <label class="modalField">
+          Message style
+          <select v-model="draft.use_embed" class="selectCompact">
+            <option value="inherit">Inherit app default</option>
+            <option value="on">Embed</option>
+            <option value="off">Plain text</option>
+          </select>
+        </label>
+        <label class="modalField">
+          Title (optional)
+          <input v-model="draft.title_template" placeholder="e.g. 📢 {album}" />
+        </label>
+      </div>
+      <label class="modalField">
+        Body (optional)
         <textarea v-model="draft.caption_template" rows="2" placeholder="e.g. {prefix}{album} — {count}/{total} pieces, rated {rating}"></textarea>
       </label>
-      <p v-if="draft.trigger_type === 'scheduled'" class="muted captionHint">
-        Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>. Leave empty to use the default caption.
+      <p class="muted captionHint">
+        Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>.
+        Empty fields inherit the app defaults; an album's own config overrides both.
       </p>
       <div class="modalActions">
         <button type="button" class="btnCompact" @click="createOpen = false">Cancel</button>
@@ -174,17 +209,25 @@ onMounted(() => runTask(refresh))
                 Currently: {{ editingRule()!.schedule_description }}
                 <span v-if="editingRule()!.next_run_at">— next {{ formatRelative(editingRule()!.next_run_at as string) }}</span>
               </p>
-              <template v-if="editDraft.trigger_type === 'scheduled'">
-                <textarea
-                  v-model="editDraft.caption_template"
-                  class="inputInlineEdit captionTextarea"
-                  rows="2"
-                  placeholder="Caption template (optional), e.g. {prefix}{album} — {count}/{total}"
-                ></textarea>
-                <p class="muted captionHint">
-                  Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>
-                </p>
-              </template>
+              <select v-model="editDraft.use_embed" class="selectCompact">
+                <option value="inherit">Inherit style</option>
+                <option value="on">Embed</option>
+                <option value="off">Plain text</option>
+              </select>
+              <input
+                v-model="editDraft.title_template"
+                class="inputInlineEdit"
+                placeholder="Title (optional), e.g. 📢 {album}"
+              />
+              <textarea
+                v-model="editDraft.caption_template"
+                class="inputInlineEdit captionTextarea"
+                rows="2"
+                placeholder="Body (optional), e.g. {prefix}{album} — {count}/{total}"
+              ></textarea>
+              <p class="muted captionHint">
+                Placeholders: <code>{album}</code> <code>{count}</code> <code>{total}</code> <code>{rating}</code> <code>{prefix}</code>
+              </p>
             </td>
             <td data-label="Next">-</td>
             <td data-label="History"><input v-model.number="editDraft.history_size" type="number" class="inputInlineEdit" :disabled="editDraft.trigger_type !== 'scheduled'" /></td>
