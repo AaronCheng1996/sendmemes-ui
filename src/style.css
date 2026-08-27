@@ -44,6 +44,42 @@
   --success-border: #2f9f76;
   --error-border: #af4a4a;
 
+  /* Status surfaces. Previously hard-coded per rule, which meant every one
+     needed its own :root[data-theme='light'] override further down. */
+  --ok-bg: rgba(30, 190, 120, 0.2);
+  --ok-text: #87ffd0;
+  --fail-bg: rgba(240, 80, 80, 0.24);
+  --unknown-bg: rgba(120, 140, 180, 0.2);
+  --created-text: #7ee0a3;
+  --created-border: #2e5c41;
+  --added-text: #8fb7f2;
+  --added-border: #2b4a7a;
+  --badge-border: #2b3d66;
+
+  /*
+   * Type scale. Four steps cover everything below body size; the file used to
+   * carry nine values between 0.7 and 0.92rem, differences too small to read as
+   * intentional but big enough to knock adjacent baselines out of line.
+   */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-base: 0.9375rem;
+  --fs-lg: 1rem;
+  --fs-h3: 1.125rem;
+  --fs-xl: 1.7rem;
+  --fs-2xl: 2rem;
+
+  /* Spacing scale, 4px-based. Replaces twenty eyeballed rem values. */
+  --sp-1: 0.25rem;
+  --sp-2: 0.375rem;
+  --sp-3: 0.5rem;
+  --sp-4: 0.625rem;
+  --sp-5: 0.75rem;
+  --sp-6: 1rem;
+  --sp-7: 1.25rem;
+  --sp-8: 2rem;
+
   /* Shape + depth */
   --radius-sm: 8px;
   --radius-md: 10px;
@@ -89,6 +125,13 @@
   --shadow-modal: 0 24px 50px rgba(60, 80, 130, 0.2);
   --shadow-toast: 0 12px 28px rgba(60, 80, 130, 0.18);
   --row-hover: rgba(70, 110, 220, 0.05);
+
+  --ok-text: #0a5c3c;
+  --created-text: #1f7a44;
+  --created-border: #9ed4b4;
+  --added-text: #24589c;
+  --added-border: #aac6ec;
+  --badge-border: #c5d1ee;
 }
 
 :root {
@@ -129,8 +172,8 @@ body {
 /* ---------------------------------------------------------------- layout -- */
 
 .hero {
-  margin-bottom: 1rem;
-  padding: 1.1rem 1.2rem;
+  margin-bottom: var(--sp-6);
+  padding: var(--sp-6) var(--sp-6);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-accent);
   background: linear-gradient(145deg, rgba(83, 144, 255, 0.22), rgba(120, 89, 255, 0.22));
@@ -138,60 +181,60 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: var(--sp-6);
 }
 
 .hero h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: var(--fs-2xl);
 }
 
 .hero p {
-  margin: 0.4rem 0 0;
+  margin: var(--sp-2) 0 0;
   color: var(--text-soft);
 }
 
 .heroActions {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--sp-3);
 }
 
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1rem;
-  margin-bottom: 1rem;
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-6);
   box-shadow: var(--shadow);
 }
 
 .row {
   display: flex;
-  gap: 0.7rem;
+  gap: var(--sp-5);
   align-items: center;
-  margin-bottom: 0.8rem;
+  margin-bottom: var(--sp-5);
 }
 
 .grid2 {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--sp-5);
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .grid5 {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--sp-3);
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin-bottom: 0.8rem;
+  margin-bottom: var(--sp-5);
 }
 
 /* ------------------------------------------------------------------ nav -- */
 
 .tabs {
   display: flex;
-  gap: 0.6rem;
-  margin-bottom: 1rem;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
 }
 
 .tabLink {
@@ -200,8 +243,8 @@ body {
   color: var(--text-strong);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  padding: 0.52rem 0.64rem;
-  font-size: 0.92rem;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-base);
   transition: all var(--transition);
 }
 
@@ -223,20 +266,21 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 0.75rem 1rem;
-  margin-bottom: 0.6rem;
+  gap: var(--sp-5) var(--sp-6);
+  margin-bottom: var(--sp-4);
 }
 
 .toolbarTitle {
   margin: 0;
   flex: 0 0 auto;
+  font-size: var(--fs-h3);
 }
 
 .toolbarFilters {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 0.5rem;
+  gap: var(--sp-3);
   flex: 1 1 240px;
 }
 
@@ -247,15 +291,15 @@ body {
 .toolbarLabel {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.82rem;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
   color: var(--text-label);
 }
 
 .toolbarActions {
   margin-left: auto;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--sp-3);
   flex-wrap: wrap;
   align-items: flex-end;
 }
@@ -264,19 +308,19 @@ body {
 .toolbarSecondary {
   display: flex;
   align-items: flex-end;
-  gap: 0.5rem 1rem;
+  gap: var(--sp-3) var(--sp-6);
   flex-wrap: wrap;
-  padding-top: 0.5rem;
+  padding-top: var(--sp-3);
   border-top: 1px solid var(--border-subtle);
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--sp-4);
 }
 
 /* ----------------------------------------------------------- typography -- */
 
 .muted {
   color: var(--text-muted);
-  font-size: 0.86rem;
-  margin: 0 0 0.75rem;
+  font-size: var(--fs-md);
+  margin: 0 0 var(--sp-5);
 }
 
 .tableHint {
@@ -284,8 +328,8 @@ body {
 }
 
 .subheading {
-  margin: 1rem 0 0.5rem;
-  font-size: 1rem;
+  margin: var(--sp-6) 0 var(--sp-3);
+  font-size: var(--fs-lg);
 }
 
 /* Always rendered (height never changes) so toggling busy never shifts
@@ -293,7 +337,7 @@ body {
 .progressBar {
   height: 3px;
   border-radius: 999px;
-  margin: 0 0 0.6rem;
+  margin: 0 0 var(--sp-4);
   overflow: hidden;
   background: transparent;
 }
@@ -325,9 +369,9 @@ body {
 label {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--sp-2);
   color: var(--text-label);
-  font-size: 0.9rem;
+  font-size: var(--fs-base);
 }
 
 input,
@@ -338,8 +382,8 @@ button {
   color: var(--text-strong);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  padding: 0.52rem 0.64rem;
-  font-size: 0.92rem;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-base);
 }
 
 input:focus,
@@ -377,22 +421,22 @@ button:disabled {
 }
 
 .btnCompact {
-  padding: 0.4rem 0.65rem;
-  font-size: 0.88rem;
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-md);
   border-radius: var(--radius-sm);
 }
 
 .selectCompact {
   border-radius: var(--radius-sm);
-  padding: 0.4rem 0.5rem;
-  font-size: 0.88rem;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-md);
 }
 
 .inputCompact {
   width: 3.5rem;
   min-width: 2.75rem;
-  padding: 0.38rem 0.45rem;
-  font-size: 0.88rem;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-md);
   border-radius: var(--radius-sm);
 }
 
@@ -401,8 +445,8 @@ button:disabled {
   width: 100%;
   min-width: 6rem;
   max-width: 16rem;
-  padding: 0.38rem 0.45rem;
-  font-size: 0.88rem;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-md);
   border-radius: var(--radius-sm);
 }
 
@@ -431,7 +475,7 @@ table {
 th,
 td {
   border-top: 1px solid var(--border);
-  padding: 0.5rem;
+  padding: var(--sp-3);
   text-align: left;
   vertical-align: top;
 }
@@ -462,7 +506,7 @@ tbody tr:hover {
 
 .actions {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--sp-2);
   flex-wrap: wrap;
 }
 
@@ -501,19 +545,19 @@ tbody tr:hover {
   .tableResponsive tr {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    margin-bottom: 0.75rem;
-    padding: 0.2rem 0.65rem;
+    margin-bottom: var(--sp-5);
+    padding: var(--sp-1) var(--sp-4);
     background: var(--surface);
   }
 
   .tableResponsive td {
     border-top: none;
     border-bottom: 1px solid var(--border-subtle);
-    padding: 0.5rem 0;
+    padding: var(--sp-3) 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--sp-5);
     text-align: right;
   }
 
@@ -527,7 +571,7 @@ tbody tr:hover {
     color: var(--text-label);
     text-align: left;
     flex: 0 0 auto;
-    margin-right: 0.5rem;
+    margin-right: var(--sp-3);
   }
 
   .tableResponsive td.actions {
@@ -569,7 +613,7 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
 }
 
 /* Small stays square (icon-like). */
@@ -617,12 +661,12 @@ tbody tr:hover {
    but is skipped by scheduled delivery until the folder comes back. */
 .missingBadge {
   display: inline-block;
-  margin-left: 0.4rem;
-  padding: 0.05rem 0.4rem;
+  margin-left: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
   border-radius: 999px;
   border: 1px solid var(--danger-border);
   color: var(--danger-text);
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   vertical-align: middle;
@@ -653,22 +697,22 @@ tbody tr:hover {
 .pagination {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.8rem;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
   color: var(--text-label);
-  font-size: 0.9rem;
+  font-size: var(--fs-base);
 }
 
 .paginationNav,
 .paginationSettings {
   display: flex;
   align-items: center;
-  gap: 0.45rem 0.6rem;
+  gap: var(--sp-3) var(--sp-4);
   flex-wrap: wrap;
 }
 
 .paginationSettings {
-  padding-top: 0.25rem;
+  padding-top: var(--sp-1);
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -684,13 +728,13 @@ tbody tr:hover {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--sp-2);
   flex-wrap: nowrap;
   white-space: nowrap;
 }
 
 .paginationJumpLabel {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
 }
 
@@ -698,47 +742,37 @@ tbody tr:hover {
 
 .eventBadge {
   display: inline-block;
-  padding: 0.12rem 0.5rem;
+  padding: var(--sp-1) var(--sp-3);
   border-radius: 999px;
-  font-size: 0.78rem;
-  border: 1px solid #2b3d66;
+  font-size: var(--fs-xs);
+  border: 1px solid var(--badge-border);
 }
 
 .eventCreated {
-  color: #7ee0a3;
-  border-color: #2e5c41;
+  color: var(--created-text);
+  border-color: var(--created-border);
 }
 
 .eventAdded {
-  color: #8fb7f2;
-  border-color: #2b4a7a;
-}
-
-:root[data-theme='light'] .eventCreated {
-  color: #1f7a44;
-  border-color: #9ed4b4;
-}
-
-:root[data-theme='light'] .eventAdded {
-  color: #24589c;
-  border-color: #aac6ec;
+  color: var(--added-text);
+  border-color: var(--added-border);
 }
 
 .scopeBadge {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.3rem 0.6rem;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
   border-radius: 999px;
   border: 1px solid var(--accent-border);
   color: var(--accent-text);
-  font-size: 0.84rem;
+  font-size: var(--fs-sm);
   background: var(--surface-alt);
 }
 
 .scopeBadgeClear {
-  padding: 0.1rem 0.45rem;
-  font-size: 0.78rem;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-xs);
   border-radius: 999px;
 }
 
@@ -747,15 +781,15 @@ tbody tr:hover {
 .effectiveCard {
   background: var(--surface-alt);
   border: 1px solid var(--border-accent);
-  border-radius: 12px;
-  padding: 0.75rem;
-  margin-bottom: 0.8rem;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
 }
 
 .effectiveRow {
-  margin: 0 0 0.4rem;
+  margin: 0 0 var(--sp-2);
   color: var(--text-muted);
-  font-size: 0.86rem;
+  font-size: var(--fs-md);
 }
 
 .effectiveRow:last-child {
@@ -764,28 +798,28 @@ tbody tr:hover {
 
 .statGrid {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--sp-5);
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .statCard {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--sp-1);
   background: var(--surface-alt);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-lg);
-  padding: 0.9rem 1rem;
+  padding: var(--sp-6) var(--sp-6);
 }
 
 .statValue {
-  font-size: 1.7rem;
+  font-size: var(--fs-xl);
   font-weight: 600;
   color: var(--text-strong);
 }
 
 .statLabel {
-  font-size: 0.84rem;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
 }
 
@@ -795,16 +829,16 @@ tbody tr:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--sp-3);
 }
 
 .scheduleItem,
 .activityItem {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--sp-4);
   flex-wrap: wrap;
-  padding: 0.5rem 0.65rem;
+  padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
 }
@@ -817,7 +851,7 @@ tbody tr:hover {
 
 .scheduleItemNext {
   color: var(--text-muted);
-  font-size: 0.86rem;
+  font-size: var(--fs-md);
 }
 
 .activityItemTime {
@@ -825,34 +859,26 @@ tbody tr:hover {
 }
 
 .healthPill {
-  padding: 0.35rem 0.6rem;
+  padding: var(--sp-2) var(--sp-4);
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   border: 1px solid var(--border-accent);
   text-transform: uppercase;
 }
 
 .health-ok {
-  background: rgba(30, 190, 120, 0.2);
-  color: #87ffd0;
+  background: var(--ok-bg);
+  color: var(--ok-text);
 }
 
 .health-fail {
-  background: rgba(240, 80, 80, 0.24);
+  background: var(--fail-bg);
   color: var(--danger-text);
 }
 
 .health-unknown {
-  background: rgba(120, 140, 180, 0.2);
+  background: var(--unknown-bg);
   color: var(--text-soft);
-}
-
-:root[data-theme='light'] .health-ok {
-  color: #0f7a52;
-}
-
-:root[data-theme='light'] .health-fail {
-  color: #a03030;
 }
 
 /* --------------------------------------------------------------- login -- */
@@ -863,7 +889,7 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   min-height: 100vh;
-  padding: 2rem 1.25rem;
+  padding: var(--sp-8) var(--sp-7);
 }
 
 .loginShell {
@@ -872,24 +898,24 @@ tbody tr:hover {
 
 .loginTitle {
   margin-top: 0;
-  font-size: 1.65rem;
+  font-size: var(--fs-xl);
 }
 
 .loginHint {
   color: var(--text-label);
-  font-size: 0.9rem;
-  margin: 0.5rem 0 0;
+  font-size: var(--fs-base);
+  margin: var(--sp-3) 0 0;
 }
 
 .loginForm {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-top: 1.25rem;
+  gap: var(--sp-6);
+  margin-top: var(--sp-7);
 }
 
 .loginSubmit {
-  margin-top: 0.25rem;
+  margin-top: var(--sp-1);
 }
 
 /* --------------------------------------------------------------- modal -- */
@@ -902,14 +928,14 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: var(--sp-6);
 }
 
 .modalPanel {
   background: var(--surface-solid);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: var(--sp-7);
   min-width: min(420px, 100%);
   box-shadow: var(--shadow-modal);
 }
@@ -919,35 +945,36 @@ tbody tr:hover {
 }
 
 .modalTitle {
-  margin: 0 0 1rem;
+  margin: 0 0 var(--sp-6);
+  font-size: var(--fs-h3);
 }
 
 .modalField {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-6);
   color: var(--text-label);
-  font-size: 0.9rem;
+  font-size: var(--fs-base);
 }
 
 .modalGrid {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--sp-5);
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .modalActions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
 }
 
 /* All buttons inside a modal actions row share compact sizing. */
 .modalActions button {
-  padding: 0.4rem 0.65rem;
-  font-size: 0.88rem;
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-md);
   border-radius: var(--radius-sm);
 }
 
@@ -959,7 +986,7 @@ tbody tr:hover {
   bottom: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: var(--sp-3);
   z-index: 100;
 }
 
@@ -970,11 +997,11 @@ tbody tr:hover {
   border: 1px solid var(--border-strong);
   background: var(--surface-solid);
   color: var(--text-strong);
-  padding: 0.65rem 0.75rem;
+  padding: var(--sp-4) var(--sp-5);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--sp-4);
   box-shadow: var(--shadow-toast);
 }
 
@@ -987,7 +1014,7 @@ tbody tr:hover {
 }
 
 .toastClose {
-  padding: 0.15rem 0.45rem;
+  padding: var(--sp-1) var(--sp-3);
   border-radius: 6px;
 }
 

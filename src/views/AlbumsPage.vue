@@ -352,8 +352,8 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
 <style scoped>
 .mutedInline {
   font-weight: 400;
-  color: #8a9bc4;
-  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
 }
 
 .sendModeSelect {
@@ -363,12 +363,12 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
 
 .configTextarea {
   font-family: monospace;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   resize: vertical;
 }
 
 .configError {
   color: var(--danger-text);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
 }
 </style>

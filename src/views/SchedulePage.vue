@@ -370,18 +370,18 @@ onMounted(() => runTask(refresh))
 
 <style scoped>
 .createBox {
-  margin-bottom: 0.8rem;
+  margin-bottom: var(--sp-5);
 }
 
 .embedOptions {
-  margin-bottom: 0.6rem;
-  font-size: 0.88rem;
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-md);
 }
 
 .embedOptions summary {
   cursor: pointer;
   color: var(--text-label);
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--sp-2);
 }
 
 .channelCell {
@@ -389,24 +389,24 @@ onMounted(() => runTask(refresh))
 }
 
 .scheduleHint {
-  margin: 0.3rem 0 0;
-  font-size: 0.78rem;
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
 }
 
 .captionTextarea {
   display: block;
   width: 100%;
-  margin-top: 0.4rem;
+  margin-top: var(--sp-2);
   resize: vertical;
 }
 
 .captionHint {
-  margin: 0.3rem 0 0;
-  font-size: 0.76rem;
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-xs);
 }
 
 .captionHint code {
-  font-size: 0.76rem;
+  font-size: var(--fs-xs);
 }
 </style>

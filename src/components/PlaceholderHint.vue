@@ -67,12 +67,12 @@ const groups = computed(() => {
 
 <style scoped>
 .placeholderHint {
-  margin: 0.3rem 0 0;
-  font-size: 0.76rem;
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-xs);
 }
 
 .placeholderHint p {
-  margin: 0 0 0.25rem;
+  margin: 0 0 var(--sp-1);
 }
 
 .placeholderHint p:last-child {
@@ -80,11 +80,11 @@ const groups = computed(() => {
 }
 
 .placeholderHint code {
-  font-size: 0.76rem;
+  font-size: var(--fs-xs);
   background: var(--surface-alt);
-  border-radius: 4px;
-  padding: 0 0.25rem;
-  margin-right: 0.2rem;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--sp-1);
+  margin-right: var(--sp-1);
   white-space: nowrap;
 }
 </style>

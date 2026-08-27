@@ -78,11 +78,7 @@ watch([offset, limit], () => runTask(refresh))
 .fileNames {
   max-width: 26rem;
   overflow-wrap: anywhere;
-  font-size: 0.84rem;
-  color: #8a9bc4;
-}
-
-:root[data-theme='light'] .fileNames {
-  color: #5a6a90;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
 }
 </style>
