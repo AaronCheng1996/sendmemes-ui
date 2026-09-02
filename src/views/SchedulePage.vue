@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
-import type { DeliveryRule, MessageStyle, TriggerType } from '../types/admin'
+import type { AlbumPathFilter, DeliveryRule, MessageStyle, TriggerType } from '../types/admin'
 import { createRule, deleteRule, listRules, testRule, updateRule } from '../services/adminApi'
 import { useAsyncTask } from '../composables/useAsyncTask'
 import { useJobs } from '../composables/useJobs'
@@ -10,6 +10,9 @@ import { formatAbsolute, formatRelative } from '../utils/time'
 import PlaceholderHint from '../components/PlaceholderHint.vue'
 
 const TRIGGERS: TriggerType[] = ['scheduled', 'new_album', 'new_files']
+
+const SCOPE_HINT =
+  'Folder paths from the synced root, one per line (e.g. Media/Crawler). A path covers that folder and everything under it.'
 
 type RuleDraft = {
   name: string
@@ -30,7 +33,13 @@ type RuleDraft = {
   show_image: Tri
   show_thumbnail: Tri
   show_timestamp: Tri
+  /** Which albums the rule covers, addressed by folder path. */
+  album_filter_mode: FilterMode
+  /** One path per line in the form; split on save. */
+  album_paths: string
 }
+
+type FilterMode = 'all' | 'include' | 'exclude'
 
 /** Every optional flag is a tri-state so "inherit" stays distinct from "off". */
 type Tri = 'inherit' | 'on' | 'off'
@@ -45,6 +54,17 @@ function triFromApi(v: boolean | null | undefined): Tri {
   if (v === true) return 'on'
   if (v === false) return 'off'
   return 'inherit'
+}
+
+/** Builds the album scope payload. A mode with no paths is sent as "all": a
+ *  half-filled form should widen the rule, never silence it. */
+function draftToFilter(d: RuleDraft): AlbumPathFilter {
+  const paths = d.album_paths
+    .split('\n')
+    .map((p) => p.trim().replace(/^\/+|\/+$/g, ''))
+    .filter(Boolean)
+  if (d.album_filter_mode === 'all' || paths.length === 0) return { mode: 'all' }
+  return { mode: d.album_filter_mode, paths }
 }
 
 /** Builds the API payload, dropping empty fields so they keep inheriting. */
@@ -82,6 +102,8 @@ function blankDraft(): RuleDraft {
     show_image: 'inherit',
     show_thumbnail: 'inherit',
     show_timestamp: 'inherit',
+    album_filter_mode: 'all',
+    album_paths: '',
   }
 }
 
@@ -104,7 +126,17 @@ function toDraft(r: DeliveryRule): RuleDraft {
     show_image: triFromApi(r.message_style?.show_image),
     show_thumbnail: triFromApi(r.message_style?.show_thumbnail),
     show_timestamp: triFromApi(r.message_style?.show_timestamp),
+    album_filter_mode: r.album_filter?.mode ?? 'all',
+    album_paths: (r.album_filter?.paths ?? []).join('\n'),
   }
+}
+
+/** One-line summary of a rule's album scope, for the table. */
+function filterLabel(r: DeliveryRule): string {
+  const mode = r.album_filter?.mode ?? 'all'
+  const paths = r.album_filter?.paths ?? []
+  if (mode === 'all' || paths.length === 0) return 'All albums'
+  return `${mode === 'include' ? 'Only' : 'Except'} ${paths.join(', ')}`
 }
 
 const { pushToast } = useToast()
@@ -122,7 +154,7 @@ async function refresh() {
 }
 
 async function onCreate() {
-  await createRule({ ...draft.value, message_style: draftToStyle(draft.value) })
+  await createRule({ ...draft.value, message_style: draftToStyle(draft.value), album_filter: draftToFilter(draft.value) })
   createOpen.value = false
   draft.value = blankDraft()
   await refresh()
@@ -142,7 +174,7 @@ function editingRule(): DeliveryRule | undefined {
 }
 
 async function onUpdate(id: number) {
-  await updateRule(id, { ...editDraft.value, message_style: draftToStyle(editDraft.value) })
+  await updateRule(id, { ...editDraft.value, message_style: draftToStyle(editDraft.value), album_filter: draftToFilter(editDraft.value) })
   editingId.value = null
   await refresh()
   pushToast('Rule updated', 'success')
@@ -161,7 +193,12 @@ async function onDelete(id: number) {
 }
 
 async function onToggle(r: DeliveryRule) {
-  await updateRule(r.id, { ...toDraft(r), enabled: !r.enabled, message_style: draftToStyle(toDraft(r)) })
+  await updateRule(r.id, {
+    ...toDraft(r),
+    enabled: !r.enabled,
+    message_style: draftToStyle(toDraft(r)),
+    album_filter: draftToFilter(toDraft(r)),
+  })
   await refresh()
 }
 
@@ -180,6 +217,8 @@ onMounted(() => runTask(refresh))
     <p class="muted tableHint">
       Rules drive scheduled album sends (<code>scheduled</code>) and "new content" posts
       (<code>new_album</code> / <code>new_files</code>). Edits take effect within ~30s.
+      <strong>Albums</strong> narrows a rule to part of the library by folder path — an
+      auto-growing subtree stays covered without touching the rule again.
     </p>
 
     <div class="progressBar" :class="{ progressBarActive: busy }" role="progressbar" aria-label="Working" :aria-busy="busy"></div>
@@ -197,6 +236,19 @@ onMounted(() => runTask(refresh))
         <label class="modalField">Guild ID <input v-model="draft.guild_id" placeholder="optional" /></label>
         <label v-if="draft.trigger_type === 'scheduled'" class="modalField">Interval <input v-model="draft.send_interval" placeholder="e.g. 6h or 0 9 * * *" /></label>
         <label v-if="draft.trigger_type === 'scheduled'" class="modalField">History size <input v-model.number="draft.history_size" type="number" /></label>
+        <label class="modalField">
+          Albums
+          <select v-model="draft.album_filter_mode" class="selectCompact">
+            <option value="all">All albums</option>
+            <option value="include">Only these paths</option>
+            <option value="exclude">All except these paths</option>
+          </select>
+        </label>
+        <label v-if="draft.album_filter_mode !== 'all'" class="modalField">
+          Paths
+          <textarea v-model="draft.album_paths" rows="2" class="pathsTextarea" placeholder="Media/Crawler"></textarea>
+          <span class="mutedInline">{{ SCOPE_HINT }}</span>
+        </label>
       </div>
       <div class="grid2">
         <label class="modalField">
@@ -265,6 +317,7 @@ onMounted(() => runTask(refresh))
           <th>ID</th>
           <th>Name</th>
           <th>Trigger</th>
+          <th>Albums</th>
           <th>Channel</th>
           <th>Interval</th>
           <th>Next</th>
@@ -282,6 +335,21 @@ onMounted(() => runTask(refresh))
               <select v-model="editDraft.trigger_type" class="selectCompact">
                 <option v-for="t in TRIGGERS" :key="t" :value="t">{{ t }}</option>
               </select>
+            </td>
+            <td data-label="Albums">
+              <select v-model="editDraft.album_filter_mode" class="selectCompact">
+                <option value="all">All albums</option>
+                <option value="include">Only these</option>
+                <option value="exclude">All except</option>
+              </select>
+              <textarea
+                v-if="editDraft.album_filter_mode !== 'all'"
+                v-model="editDraft.album_paths"
+                rows="2"
+                class="pathsTextarea"
+                placeholder="Media/Crawler"
+                :title="SCOPE_HINT"
+              ></textarea>
             </td>
             <td data-label="Channel"><input v-model="editDraft.channel_id" class="inputInlineEdit" /></td>
             <td data-label="Interval">
@@ -341,6 +409,7 @@ onMounted(() => runTask(refresh))
           <template v-else>
             <td data-label="Name">{{ r.name || '-' }}</td>
             <td data-label="Trigger">{{ r.trigger_type }}</td>
+            <td class="scopeCell" data-label="Albums">{{ filterLabel(r) }}</td>
             <td class="channelCell" data-label="Channel">{{ r.channel_id }}</td>
             <td data-label="Interval">{{ r.trigger_type === 'scheduled' ? (r.schedule_description || r.send_interval) : '-' }}</td>
             <td data-label="Next">
@@ -361,7 +430,7 @@ onMounted(() => runTask(refresh))
           </template>
         </tr>
         <tr v-if="!busy && rules.length === 0">
-          <td colspan="9" class="muted">No delivery rules yet. Create one to start scheduling or notifications.</td>
+          <td colspan="10" class="muted">No delivery rules yet. Create one to start scheduling or notifications.</td>
         </tr>
       </tbody>
     </table>
@@ -392,6 +461,25 @@ onMounted(() => runTask(refresh))
   margin: var(--sp-2) 0 0;
   font-size: var(--fs-xs);
   color: var(--text-muted);
+}
+
+.pathsTextarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: var(--fs-sm);
+  resize: vertical;
+}
+
+.scopeCell {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.mutedInline {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
 }
 
 .captionTextarea {

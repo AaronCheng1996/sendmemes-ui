@@ -5,6 +5,9 @@ export type MediaKind = 'image' | 'video'
 export type Album = {
   id: number
   name: string
+  /** Full path of the album's folder from the walked root, root name included
+   *  (e.g. "Media/Crawler/SomeArtist"). What a rule's album_filter matches. */
+  source_path?: string
   /** The source's own id for the folder backing this album (a pCloud folderid).
    *  It survives a rename, which is how a sync keeps an album's rating and
    *  config when its folder is renamed. Absent until a sync has seen it. */
@@ -45,6 +48,13 @@ export type Page<T> = {
 
 export type TriggerType = 'new_album' | 'new_files' | 'scheduled'
 
+/** Narrows a rule to part of the library by folder path. Absent, or mode 'all',
+ *  covers every album. A path matches the folder itself and everything under it. */
+export type AlbumPathFilter = {
+  mode?: 'all' | 'include' | 'exclude'
+  paths?: string[]
+}
+
 export type DeliveryRule = {
   id: number
   name: string
@@ -56,6 +66,8 @@ export type DeliveryRule = {
   enabled: boolean
   /** Presentation overrides; unset fields inherit the app defaults. */
   message_style?: MessageStyle
+  /** Which albums the rule applies to; unset means all of them. */
+  album_filter?: AlbumPathFilter
   /** Computed on read for scheduled rules only; never persisted. */
   next_run_at?: string
   schedule_description?: string

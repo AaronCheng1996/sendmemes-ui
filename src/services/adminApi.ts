@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumSendMode, DeliveryRule, Image, Job, MessageStyle, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
+import type { Album, AlbumPathFilter, AlbumSendMode, DeliveryRule, Image, Job, MessageStyle, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -169,6 +169,8 @@ export type DeliveryRuleInput = {
   history_size: number
   enabled: boolean
   message_style: MessageStyle
+  /** Which albums the rule covers; omit or send {mode:'all'} for every album. */
+  album_filter: AlbumPathFilter
 }
 
 export async function listRules() {
