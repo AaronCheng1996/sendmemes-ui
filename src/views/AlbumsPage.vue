@@ -33,6 +33,10 @@ const filterTextInput = ref('')
 const filterField = ref<AlbumFilterField>('all')
 const filterText = ref('')
 
+// Albums whose source folder vanished are soft-deleted, not dropped, so they
+// stay out of the way until someone asks to see them.
+const includeMissing = ref(false)
+
 const newAlbumName = ref('')
 const newAlbumSendMode = ref<AlbumSendMode>('Random')
 const newAlbumSendConfigJSON = ref('')
@@ -87,6 +91,7 @@ async function refresh() {
     sortOrder: sortDir.value,
     filterField: filterField.value,
     filterQ: filterText.value,
+    includeMissing: includeMissing.value,
   })
   albums.value = page.items
   total.value = page.total
@@ -181,7 +186,7 @@ function startEdit(a: Album) {
   editingAlbumSendConfigJSON.value = a.send_config_json ?? ''
 }
 
-watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
+watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing], () => {
   runTask(refresh)
 }, { immediate: true })
 </script>
@@ -202,12 +207,19 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
         <button type="button" class="btnCompact" :disabled="busy" @click="applyFilter">Apply filter</button>
       </div>
       <div class="toolbarActions">
+        <label class="toggleLabel" title="Albums whose source folder disappeared. They keep their rating and config, and come back on their own if the folder returns.">
+          <input v-model="includeMissing" type="checkbox" @change="offset = 0" />
+          Show missing
+        </label>
         <button type="button" class="btnCompact" :disabled="busy" @click="runTask(refresh)">Refresh</button>
         <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
     </div>
     <div class="progressBar" :class="{ progressBarActive: busy }" role="progressbar" aria-label="Working" :aria-busy="busy"></div>
-    <p class="muted tableHint">Filter and sort apply to <strong>all rows</strong> in the database; this table shows one page of results.</p>
+    <p class="muted tableHint">
+      Filter and sort apply to <strong>all rows</strong> in the database; this table shows one page of results.
+      Albums whose source folder disappeared are hidden unless <strong>Show missing</strong> is on.
+    </p>
 
     <Pagination
       :total="total"
@@ -256,7 +268,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText], () => {
               <span
                 v-if="a.missing_since"
                 class="missingBadge"
-                :title="`Source folder not found since ${formatAbsolute(a.missing_since)} — skipped by scheduled sends until it reappears`"
+                :title="`Source folder not found since ${formatAbsolute(a.missing_since)} — its files are retired with it, and both come back if the folder reappears`"
               >missing</span>
             </template>
           </td>

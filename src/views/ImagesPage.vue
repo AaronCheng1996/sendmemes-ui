@@ -10,6 +10,7 @@ import { usePageSize } from '../composables/usePageSize'
 import { usePreviewSize } from '../composables/usePreviewSize'
 import Pagination from '../components/Pagination.vue'
 import ThumbPreview from '../components/ThumbPreview.vue'
+import { formatAbsolute } from '../utils/time'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,6 +37,10 @@ const filterFieldInput = ref<ImageFilterField>('all')
 const filterTextInput = ref('')
 const filterField = ref<ImageFilterField>('all')
 const filterText = ref('')
+
+// Files a sync no longer finds are soft-deleted, not dropped, so they stay out
+// of the way until someone asks to see them.
+const includeDeleted = ref(false)
 
 const newImage = ref({
   url: '',
@@ -111,6 +116,7 @@ async function refresh() {
     sortOrder: sortDir.value,
     filterField: filterField.value,
     filterQ: filterText.value,
+    includeDeleted: includeDeleted.value,
   })
   images.value = page.items
   total.value = page.total
@@ -146,7 +152,7 @@ function openCreate() {
   createOpen.value = true
 }
 
-watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], () => {
+watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId, includeDeleted], () => {
   runTask(refresh)
 }, { immediate: true })
 </script>
@@ -173,6 +179,10 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
         <button type="button" class="btnCompact" :disabled="busy" @click="applyFilters">Apply</button>
       </div>
       <div class="toolbarActions">
+        <label class="toggleLabel" title="Files a sync no longer finds in the source. The rows are kept, and revive on their own if the file comes back.">
+          <input v-model="includeDeleted" type="checkbox" @change="offset = 0" />
+          Show deleted
+        </label>
         <button type="button" class="btnCompact" :disabled="busy" @click="runTask(refresh)">Refresh</button>
         <button type="button" class="btnCompact btnPrimary" :disabled="busy" @click="openCreate">Create</button>
       </div>
@@ -185,6 +195,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
     </div>
     <p class="muted tableHint">
       Album ID limits rows to one album; filter and sort apply to <strong>all matching rows</strong> before pagination.
+      Files a sync no longer finds are hidden unless <strong>Show deleted</strong> is on.
     </p>
 
     <div class="progressBar" :class="{ progressBarActive: busy }" role="progressbar" aria-label="Working" :aria-busy="busy"></div>
@@ -226,7 +237,14 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, apiAlbumId], ()
           </td>
           <td class="urlCell" data-label="URL">
             <input v-if="editingImageId === img.id" v-model="editingImage.url" class="inputInlineEdit wide" />
-            <span v-else>{{ img.url }}</span>
+            <template v-else>
+              <span>{{ img.url }}</span>
+              <span
+                v-if="img.deleted_at"
+                class="deletedBadge"
+                :title="`Not found in the source since ${formatAbsolute(img.deleted_at)} — the row is kept, and revives if the file comes back`"
+              >deleted</span>
+            </template>
           </td>
           <td data-label="Kind">{{ img.kind }}</td>
           <td data-label="Source">

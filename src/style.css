@@ -659,7 +659,8 @@ tbody tr:hover {
 
 /* Flags an album whose source folder vanished: it keeps its rating and config
    but is skipped by scheduled delivery until the folder comes back. */
-.missingBadge {
+.missingBadge,
+.deletedBadge {
   display: inline-block;
   margin-left: var(--sp-2);
   padding: var(--sp-1) var(--sp-2);
@@ -756,6 +757,34 @@ tbody tr:hover {
 .eventAdded {
   color: var(--added-text);
   border-color: var(--added-border);
+}
+
+.eventRemoved {
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+
+.eventRenamed {
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+}
+
+/* Opt-in switches that sit with the toolbar buttons ("Show missing" and the
+   like), so a soft-deleted row can be brought back into view. */
+.toggleLabel {
+  display: inline-flex;
+  /* The bare `label` rule above stacks a field over its caption; a switch reads
+     the other way round, so this one puts the box beside its text. */
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-2);
+  /* Never let the toolbar squeeze the label until it wraps under its own
+     checkbox; the whole switch moves to the next line instead. */
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  color: var(--text-label);
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .scopeBadge {

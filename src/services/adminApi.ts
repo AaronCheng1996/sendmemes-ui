@@ -21,6 +21,8 @@ export type AlbumListParams = {
   sortOrder?: SortOrder
   filterField?: string
   filterQ?: string
+  /** Include albums whose source folder disappeared (hidden by default). */
+  includeMissing?: boolean
 }
 
 export type ImageListParams = {
@@ -32,6 +34,8 @@ export type ImageListParams = {
   sortOrder?: SortOrder
   filterField?: string
   filterQ?: string
+  /** Include rows a sync soft-deleted (hidden by default). */
+  includeDeleted?: boolean
 }
 
 function appendListQS(sp: URLSearchParams, p: { sortBy?: string; sortOrder?: SortOrder; filterField?: string; filterQ?: string }) {
@@ -69,6 +73,7 @@ export async function listAlbums(p: AlbumListParams = {}) {
   const sp = new URLSearchParams()
   sp.set('offset', String(p.offset ?? 0))
   sp.set('limit', String(p.limit ?? 50))
+  if (p.includeMissing) sp.set('include_missing', '1')
   appendListQS(sp, p)
   return (await adminFetch(`/v1/admin/albums?${sp}`)) as Page<Album>
 }
@@ -108,6 +113,7 @@ export async function listImages(p: ImageListParams = {}) {
   sp.set('limit', String(p.limit ?? 50))
   const aid = p.albumId?.trim()
   if (aid) sp.set('album_id', aid)
+  if (p.includeDeleted) sp.set('include_deleted', '1')
   appendListQS(sp, p)
   return (await adminFetch(`/v1/admin/images?${sp}`)) as Page<Image>
 }

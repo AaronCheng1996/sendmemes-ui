@@ -5,14 +5,19 @@ export type MediaKind = 'image' | 'video'
 export type Album = {
   id: number
   name: string
+  /** The source's own id for the folder backing this album (a pCloud folderid).
+   *  It survives a rename, which is how a sync keeps an album's rating and
+   *  config when its folder is renamed. Absent until a sync has seen it. */
+  folder_id?: number
   has_cover: boolean
   cover_image_id?: number
   send_mode: AlbumSendMode
   send_config_json?: string
   positive_rating?: number
   preview_url?: string
-  /** Set when a sync no longer finds the album's source folder; such albums are
-   *  skipped by scheduled delivery until the folder reappears. */
+  /** Set when a sync no longer finds the album's source folder. Such albums are
+   *  hidden from this list by default, and skipped by scheduled delivery, until
+   *  the folder reappears. */
   missing_since?: string
 }
 
@@ -26,6 +31,9 @@ export type Image = {
   kind: MediaKind
   size_bytes?: number
   preview_url?: string
+  /** Set when a sync no longer finds the file in its source. The row is kept so
+   *  the file revives if it comes back; it is hidden from this list by default. */
+  deleted_at?: string
 }
 
 export type Page<T> = {
@@ -76,7 +84,10 @@ export type MessageStyle = {
   show_timestamp?: boolean | null
 }
 
-export type SyncEventType = 'album_created' | 'files_added'
+/** album_created and files_added report discovered content and can be delivered
+ *  to Discord; the rest report what a sync took away (or renamed) and are only
+ *  ever shown in the activity log. */
+export type SyncEventType = 'album_created' | 'files_added' | 'album_renamed' | 'album_missing' | 'files_removed'
 
 export type SyncEvent = {
   id: number
@@ -85,6 +96,13 @@ export type SyncEvent = {
   album_name: string
   new_images: number
   new_videos: number
+  /** Files the run soft-deleted because the source no longer lists them. */
+  removed_images: number
+  removed_videos: number
+  /** The album's former name, on a rename event. */
+  previous_name?: string
+  /** Sample of the file names the event is about: discovered ones for an add
+   *  event, removed ones for a removal. Capped, not exhaustive. */
   file_names?: string[]
   created_at: string
 }

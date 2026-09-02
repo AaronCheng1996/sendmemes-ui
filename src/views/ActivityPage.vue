@@ -2,10 +2,36 @@
 import { onMounted, ref, watch } from 'vue'
 
 import Pagination from '../components/Pagination.vue'
-import type { SyncEvent } from '../types/admin'
+import type { SyncEvent, SyncEventType } from '../types/admin'
 import { listSyncEvents } from '../services/adminApi'
 import { useAsyncTask } from '../composables/useAsyncTask'
 import { formatAbsolute, formatRelative } from '../utils/time'
+
+// How each event type is labelled and coloured. Additions use the two existing
+// badge colours; removals borrow the danger palette, renames the accent one.
+const EVENT_STYLES: Record<SyncEventType, { label: string; cls: string }> = {
+  album_created: { label: 'New album', cls: 'eventCreated' },
+  files_added: { label: 'New files', cls: 'eventAdded' },
+  album_renamed: { label: 'Renamed', cls: 'eventRenamed' },
+  album_missing: { label: 'Folder removed', cls: 'eventRemoved' },
+  files_removed: { label: 'Files removed', cls: 'eventRemoved' },
+}
+
+const FALLBACK_STYLE = { label: 'Changed', cls: 'eventAdded' }
+
+function eventStyle(t: SyncEventType) {
+  return EVENT_STYLES[t] ?? FALLBACK_STYLE
+}
+
+// Removals fill the same two count columns as additions; the badge says which
+// direction they run in, so the numbers do not need their own columns.
+function imageCount(ev: SyncEvent) {
+  return ev.new_images || ev.removed_images || 0
+}
+
+function videoCount(ev: SyncEvent) {
+  return ev.new_videos || ev.removed_videos || 0
+}
 
 const { busy, runTask } = useAsyncTask()
 const events = ref<SyncEvent[]>([])
@@ -31,7 +57,10 @@ watch([offset, limit], () => runTask(refresh))
         <button type="button" class="btnCompact" :disabled="busy" @click="runTask(refresh)">Refresh</button>
       </div>
     </div>
-    <p class="muted tableHint">New albums and files discovered by pCloud sync runs, newest first.</p>
+    <p class="muted tableHint">
+      What each sync run changed, newest first: albums and files discovered, files and folders that disappeared,
+      and folders that were renamed. Removals are recorded here only — they are never posted to Discord.
+    </p>
 
     <Pagination
       :total="total"
@@ -48,8 +77,8 @@ watch([offset, limit], () => runTask(refresh))
           <th>Time</th>
           <th>Event</th>
           <th>Album</th>
-          <th>New images</th>
-          <th>New videos</th>
+          <th>Images</th>
+          <th>Videos</th>
           <th>Files (sample)</th>
         </tr>
       </thead>
@@ -57,13 +86,15 @@ watch([offset, limit], () => runTask(refresh))
         <tr v-for="ev in events" :key="ev.id">
           <td data-label="Time" :title="formatAbsolute(ev.created_at)">{{ formatRelative(ev.created_at) }}</td>
           <td data-label="Event">
-            <span class="eventBadge" :class="ev.event_type === 'album_created' ? 'eventCreated' : 'eventAdded'">
-              {{ ev.event_type === 'album_created' ? 'New album' : 'New files' }}
+            <span class="eventBadge" :class="eventStyle(ev.event_type).cls">
+              {{ eventStyle(ev.event_type).label }}
             </span>
           </td>
-          <td data-label="Album">{{ ev.album_name }}</td>
-          <td data-label="New images">{{ ev.new_images || '-' }}</td>
-          <td data-label="New videos">{{ ev.new_videos || '-' }}</td>
+          <td data-label="Album">
+            <span v-if="ev.previous_name" class="renamedFrom">{{ ev.previous_name }} → </span>{{ ev.album_name }}
+          </td>
+          <td data-label="Images">{{ imageCount(ev) || '-' }}</td>
+          <td data-label="Videos">{{ videoCount(ev) || '-' }}</td>
           <td class="fileNames" data-label="Files">{{ (ev.file_names ?? []).join(', ') || '-' }}</td>
         </tr>
         <tr v-if="!busy && events.length === 0">
@@ -79,6 +110,10 @@ watch([offset, limit], () => runTask(refresh))
   max-width: 26rem;
   overflow-wrap: anywhere;
   font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.renamedFrom {
   color: var(--text-muted);
 }
 </style>
