@@ -1,5 +1,5 @@
 import { useConnection } from '../composables/useConnection'
-import type { Album, AlbumPathFilter, AlbumSendMode, DeliveryRule, Image, Job, MessageStyle, Page, SyncEvent, SyncSettings, SystemStatus } from '../types/admin'
+import type { Album, AlbumPathFilter, AlbumSendMode, DeliveryRule, Image, Job, MessageStyle, Page, SyncEvent, SyncSettings, SystemStatus, TaskRun } from '../types/admin'
 
 const EMPTY_ALBUM_CONFIG = '{}'
 
@@ -222,6 +222,32 @@ export async function listSyncEvents(p: { offset?: number; limit?: number } = {}
   sp.set('offset', String(p.offset ?? 0))
   sp.set('limit', String(p.limit ?? 50))
   return (await adminFetch(`/v1/admin/sync-events?${sp}`)) as Page<SyncEvent>
+}
+
+export type TaskRunListParams = {
+  offset?: number
+  limit?: number
+  /** Exact source match; empty for any. */
+  source?: string
+  /** running | succeeded | failed; empty for any. */
+  status?: string
+}
+
+/** The durable run log behind the System log page. */
+export async function listTaskRuns(p: TaskRunListParams = {}) {
+  const sp = new URLSearchParams()
+  sp.set('offset', String(p.offset ?? 0))
+  sp.set('limit', String(p.limit ?? 50))
+  const source = p.source?.trim()
+  if (source) sp.set('source', source)
+  const status = p.status?.trim()
+  if (status) sp.set('status', status)
+  return (await adminFetch(`/v1/admin/task-runs?${sp}`)) as Page<TaskRun>
+}
+
+/** Distinct sources that have reported runs, for the page's filter. */
+export async function listTaskRunSources() {
+  return (await adminFetch('/v1/admin/task-runs/sources')) as string[]
 }
 
 /** Runtime status + counters for the overview dashboard. */

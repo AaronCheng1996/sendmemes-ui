@@ -759,6 +759,22 @@ tbody tr:hover {
   border-color: var(--added-border);
 }
 
+/* Run statuses on the System log page, sharing the event badge shape. */
+.runOk {
+  color: var(--created-text);
+  border-color: var(--created-border);
+}
+
+.runFailed {
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+
+.runRunning {
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+}
+
 .eventRemoved {
   color: var(--danger-text);
   border-color: var(--danger-border);

@@ -119,6 +119,26 @@ export type SyncEvent = {
   created_at: string
 }
 
+export type TaskRunStatus = 'running' | 'succeeded' | 'failed'
+
+/** One execution worth reviewing later: a scheduled send, a sync run, or a pass
+ *  reported by an external client such as the crawler. Run-shaped rather than
+ *  line-shaped — the table shows `summary` and expands `detail`. */
+export type TaskRun = {
+  id: number
+  /** Who ran it: 'scheduled_send', 'sync', or whatever a client calls itself. */
+  source: string
+  /** What it ran on: a rule name, an artist, a channel. */
+  task?: string
+  status: TaskRunStatus
+  started_at: string
+  finished_at?: string
+  summary?: string
+  detail?: Record<string, unknown>
+  error?: string
+  created_at: string
+}
+
 export type ManualScheduleTriggerResult = {
   triggered: boolean
   album_id?: number

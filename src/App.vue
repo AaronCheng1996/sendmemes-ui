@@ -113,6 +113,7 @@ function toggleTheme() {
         <RouterLink to="/images" class="tabLink" :class="{ active: route.path === '/images' }">Images</RouterLink>
         <RouterLink to="/schedule" class="tabLink" :class="{ active: route.path === '/schedule' }">Schedule</RouterLink>
         <RouterLink to="/activity" class="tabLink" :class="{ active: route.path === '/activity' }">Activity</RouterLink>
+        <RouterLink to="/system-log" class="tabLink" :class="{ active: route.path === '/system-log' }">System log</RouterLink>
         <RouterLink to="/connection" class="tabLink" :class="{ active: route.path === '/connection' }">Connection</RouterLink>
       </nav>
       <RouterView />

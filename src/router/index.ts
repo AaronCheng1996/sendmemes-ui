@@ -8,6 +8,7 @@ import ImagesPage from '../views/ImagesPage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import OverviewPage from '../views/OverviewPage.vue'
 import SchedulePage from '../views/SchedulePage.vue'
+import SystemLogPage from '../views/SystemLogPage.vue'
 
 function readLoggedIn(): boolean {
   return Boolean(sessionStorage.getItem(ADMIN_KEY_SESSION)?.trim())
@@ -22,6 +23,7 @@ const router = createRouter({
     { path: '/images', component: ImagesPage },
     { path: '/schedule', component: SchedulePage },
     { path: '/activity', component: ActivityPage },
+    { path: '/system-log', component: SystemLogPage },
     { path: '/connection', component: ConnectionPage },
   ],
 })
