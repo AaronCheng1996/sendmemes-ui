@@ -390,7 +390,6 @@ body {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--sp-2);
-  max-width: 40rem;
 }
 
 @media (max-width: 640px) {

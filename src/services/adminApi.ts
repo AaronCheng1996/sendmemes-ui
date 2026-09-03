@@ -224,6 +224,13 @@ export async function listSyncEvents(p: { offset?: number; limit?: number } = {}
   return (await adminFetch(`/v1/admin/sync-events?${sp}`)) as Page<SyncEvent>
 }
 
+/** An album's first few files for the expanded row, cover first. Separate from
+ *  listImages because these carry *preview* URLs — permanent public thumbnails,
+ *  not the server-bound download links the Images table asks for. */
+export async function listAlbumMedia(albumId: number, limit = 6) {
+  return (await adminFetch(`/v1/admin/albums/${albumId}/media?limit=${limit}`)) as Image[]
+}
+
 /** The images one activity event was about, resolved from the names it recorded. */
 export async function listSyncEventMedia(eventId: number) {
   return (await adminFetch(`/v1/admin/sync-events/${eventId}/media`)) as Image[]

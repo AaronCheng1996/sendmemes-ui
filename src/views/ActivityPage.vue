@@ -121,7 +121,6 @@ watch([offset, limit], () => runTask(refresh))
           <th>Album</th>
           <th>Images</th>
           <th>Videos</th>
-          <th>Files (sample)</th>
         </tr>
       </thead>
       <tbody>
@@ -142,10 +141,9 @@ watch([offset, limit], () => runTask(refresh))
             </td>
             <td data-label="Images">{{ imageCount(ev) || '-' }}</td>
             <td data-label="Videos">{{ videoCount(ev) || '-' }}</td>
-            <td class="fileNames" data-label="Files">{{ (ev.file_names ?? []).join(', ') || '-' }}</td>
           </tr>
           <tr v-if="expanded.has(ev.id)" :key="`${ev.id}-detail`" class="rowDetail">
-            <td colspan="6">
+            <td colspan="5">
               <p v-if="loadingMedia.has(ev.id)" class="detailNote">Loading files…</p>
               <MediaStrip
                 v-else-if="(media[ev.id] ?? []).length"
@@ -159,7 +157,7 @@ watch([offset, limit], () => runTask(refresh))
           </tr>
         </template>
         <tr v-if="!busy && events.length === 0">
-          <td colspan="6" class="muted">No sync activity recorded yet.</td>
+          <td colspan="5" class="muted">No sync activity recorded yet.</td>
         </tr>
       </tbody>
     </table>
@@ -167,13 +165,6 @@ watch([offset, limit], () => runTask(refresh))
 </template>
 
 <style scoped>
-.fileNames {
-  max-width: 26rem;
-  overflow-wrap: anywhere;
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-}
-
 .renamedFrom {
   color: var(--text-muted);
 }

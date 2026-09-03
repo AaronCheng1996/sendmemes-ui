@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import type { Album, AlbumSendMode, Image } from '../types/admin'
-import { createAlbum, deleteAlbum, listAlbums, listImages, sendAlbumTest, updateAlbum } from '../services/adminApi'
+import { createAlbum, deleteAlbum, listAlbumMedia, listAlbums, sendAlbumTest, updateAlbum } from '../services/adminApi'
 import { useJobs } from '../composables/useJobs'
 import { useAsyncTask } from '../composables/useAsyncTask'
 import { useToast } from '../composables/useToast'
@@ -47,9 +47,9 @@ async function toggleExpand(a: Album) {
 
   loadingMedia.value = new Set(loadingMedia.value).add(a.id)
   try {
-    // Six is what the strip shows; the cover is pulled to the front below.
-    const page = await listImages({ albumId: String(a.id), limit: 6, sortBy: 'id', sortOrder: 'asc' })
-    media.value = { ...media.value, [a.id]: coverFirst(page.items, a) }
+    // Six is what the strip shows. The endpoint puts the cover first and
+    // resolves preview URLs, which is what makes the thumbnails load at all.
+    media.value = { ...media.value, [a.id]: await listAlbumMedia(a.id, 6) }
   } catch {
     media.value = { ...media.value, [a.id]: [] }
   } finally {
@@ -57,16 +57,6 @@ async function toggleExpand(a: Album) {
     done.delete(a.id)
     loadingMedia.value = done
   }
-}
-
-/** Puts the album's cover in the first cell, where the badge expects it. */
-function coverFirst(items: Image[], a: Album): Image[] {
-  if (!a.has_cover || !a.cover_image_id) return items
-  const idx = items.findIndex((img) => img.id === a.cover_image_id)
-  if (idx <= 0) return items
-  const copy = [...items]
-  const [cover] = copy.splice(idx, 1)
-  return [cover, ...copy]
 }
 
 type AlbumFilterField = 'all' | 'id' | 'name' | 'positive_rating' | 'cover'

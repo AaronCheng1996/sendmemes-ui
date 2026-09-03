@@ -31,7 +31,10 @@ function thumb(img: Image): string | undefined {
 <template>
   <div v-if="items.length" class="mediaStrip">
     <div v-for="(img, i) in shown" :key="img.id" class="mediaCell" :title="img.url">
-      <img v-if="thumb(img)" :src="thumb(img)" :alt="img.url" loading="lazy" />
+      <!-- Deliberately not lazy: the strip only exists after a click, and a row
+           inserted then never gets re-evaluated as a lazy candidate, so all but
+           the first thumbnail would sit unfetched. Six small images cost nothing. -->
+      <img v-if="thumb(img)" :src="thumb(img)" :alt="img.url" />
       <span v-else class="mediaCellLabel">{{ img.kind === 'video' ? '🎬' : '' }} {{ img.url }}</span>
       <span v-if="coverFirst && i === 0" class="mediaCoverBadge">cover</span>
     </div>
