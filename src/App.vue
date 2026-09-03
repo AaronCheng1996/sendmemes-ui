@@ -108,13 +108,44 @@ function toggleTheme() {
       </header>
 
       <nav class="tabs routeTabs">
-        <RouterLink to="/" class="tabLink" :class="{ active: route.path === '/' }">Overview</RouterLink>
-        <RouterLink to="/albums" class="tabLink" :class="{ active: route.path === '/albums' }">Albums</RouterLink>
-        <RouterLink to="/images" class="tabLink" :class="{ active: route.path === '/images' }">Images</RouterLink>
-        <RouterLink to="/schedule" class="tabLink" :class="{ active: route.path === '/schedule' }">Schedule</RouterLink>
-        <RouterLink to="/activity" class="tabLink" :class="{ active: route.path === '/activity' }">Activity</RouterLink>
-        <RouterLink to="/system-log" class="tabLink" :class="{ active: route.path === '/system-log' }">System log</RouterLink>
-        <RouterLink to="/connection" class="tabLink" :class="{ active: route.path === '/connection' }">Connection</RouterLink>
+        <RouterLink to="/" class="tabLink" :class="{ active: route.path === '/' }">
+          <svg class="tabIcon" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3h6v6H3zM11 3h6v4h-6zM11 9h6v8h-6zM3 11h6v6H3z" /></svg>
+          <span>Overview</span>
+        </RouterLink>
+
+        <!-- Images lives under Albums: it is the same library seen a level down,
+             and two sibling tabs implied they were separate things. -->
+        <div class="tabLink tabMenu" :class="{ active: route.path === '/albums' || route.path === '/images' }">
+          <RouterLink to="/albums" class="tabMenuHead">
+            <svg class="tabIcon" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14v10H3zm2 8l3-4 2.5 3L13 8l2 3v1H5z" /><circle cx="7" cy="7" r="1.4" /></svg>
+            <span>Albums</span>
+            <svg class="tabCaret" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 4l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </RouterLink>
+          <div class="tabMenuList">
+            <RouterLink to="/albums" class="tabMenuItem" :class="{ current: route.path === '/albums' }">Albums</RouterLink>
+            <RouterLink to="/images" class="tabMenuItem" :class="{ current: route.path === '/images' }">Images</RouterLink>
+          </div>
+        </div>
+
+        <RouterLink to="/schedule" class="tabLink" :class="{ active: route.path === '/schedule' }">
+          <svg class="tabIcon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h12v13H4zm0 4h12" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M7 2v3M13 2v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><circle cx="8" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /></svg>
+          <span>Schedule</span>
+        </RouterLink>
+
+        <RouterLink to="/activity" class="tabLink" :class="{ active: route.path === '/activity' }">
+          <svg class="tabIcon" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 11h3l2.5-6 3 12 2.5-6H18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span>Activity</span>
+        </RouterLink>
+
+        <RouterLink to="/logs" class="tabLink" :class="{ active: route.path === '/logs' }">
+          <svg class="tabIcon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3h9l3 3v11H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="M7 9h6M7 12h6M7 6h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+          <span>Logs</span>
+        </RouterLink>
+
+        <RouterLink to="/settings" class="tabLink" :class="{ active: route.path === '/settings' }">
+          <svg class="tabIcon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 2.4v2M10 15.6v2M17.6 10h-2M4.4 10h-2M15.4 4.6l-1.4 1.4M6 14l-1.4 1.4M15.4 15.4L14 14M6 6L4.6 4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+          <span>Settings</span>
+        </RouterLink>
       </nav>
       <RouterView />
     </template>

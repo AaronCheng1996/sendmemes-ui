@@ -224,6 +224,25 @@ export async function listSyncEvents(p: { offset?: number; limit?: number } = {}
   return (await adminFetch(`/v1/admin/sync-events?${sp}`)) as Page<SyncEvent>
 }
 
+/** The images one activity event was about, resolved from the names it recorded. */
+export async function listSyncEventMedia(eventId: number) {
+  return (await adminFetch(`/v1/admin/sync-events/${eventId}/media`)) as Image[]
+}
+
+/** Whether the run-reporting endpoint has a credential in force. The key itself
+ *  is never returned — it can be replaced, not read back. */
+export async function getIngestKeyStatus() {
+  return (await adminFetch('/v1/admin/ingest-key')) as { configured: boolean }
+}
+
+/** Replace the ingest credential. An empty string clears it back to the env value. */
+export async function putIngestKey(key: string) {
+  return (await adminFetch('/v1/admin/ingest-key', {
+    method: 'PUT',
+    body: JSON.stringify({ ingest_api_key: key }),
+  })) as { configured: boolean }
+}
+
 export type TaskRunListParams = {
   offset?: number
   limit?: number

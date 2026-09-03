@@ -231,21 +231,43 @@ body {
 
 /* ------------------------------------------------------------------ nav -- */
 
+/* Every destination gets the same width, so the nav reads as one control
+   rather than a row of differently-sized buttons. */
 .tabs {
-  display: flex;
-  gap: var(--sp-4);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--sp-3);
   margin-bottom: var(--sp-6);
 }
 
 .tabLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-width: 0;
   text-decoration: none;
   background: var(--field-bg);
   color: var(--text-strong);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) var(--sp-3);
   font-size: var(--fs-base);
+  white-space: nowrap;
   transition: all var(--transition);
+}
+
+.tabLink > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabIcon {
+  flex: 0 0 auto;
+  width: 1.05em;
+  height: 1.05em;
+  fill: currentColor;
 }
 
 .tabLink:hover {
@@ -258,6 +280,180 @@ body {
   background: linear-gradient(130deg, var(--accent-from), var(--accent-to));
   border-color: var(--accent-border);
   color: #fff;
+}
+
+/* --- Tab with a submenu (Albums → Albums / Images) ------------------------ */
+
+.tabMenu {
+  position: relative;
+  padding: 0;
+  overflow: visible;
+}
+
+.tabMenuHead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-3);
+  color: inherit;
+  text-decoration: none;
+  border-radius: inherit;
+}
+
+.tabCaret {
+  flex: 0 0 auto;
+  width: 0.7em;
+  height: 0.7em;
+  opacity: 0.7;
+}
+
+.tabMenuList {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  padding: var(--sp-2);
+  gap: var(--sp-1);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+}
+
+/* Opens on hover and on keyboard focus, so it needs no script and no
+   outside-click handling. */
+.tabMenu:hover .tabMenuList,
+.tabMenu:focus-within .tabMenuList {
+  display: flex;
+}
+
+.tabMenuItem {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-strong);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.tabMenuItem:hover,
+.tabMenuItem:focus-visible {
+  background: var(--row-hover);
+}
+
+.tabMenuItem.current {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  /* Two rows beat six squeezed columns on a phone. */
+  .tabs {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ------------------------------------------------------ expandable rows -- */
+
+/* The Logs page's click-to-expand pattern, shared by Activity and Albums: one
+   line per thing, with the bulky part behind a click. */
+
+.rowClickable {
+  cursor: pointer;
+}
+
+.rowOpen {
+  background: var(--row-hover);
+}
+
+.rowCaret {
+  display: inline-block;
+  width: 1em;
+  color: var(--text-faint);
+}
+
+.rowDetail > td {
+  padding-top: 0;
+}
+
+/* --- Media strip inside an expanded row ---------------------------------- */
+
+/* Six equal cells. The sixth becomes a counter when there is more than fits,
+   so the strip never reflows between rows that hold different amounts. */
+.mediaStrip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--sp-2);
+  max-width: 40rem;
+}
+
+@media (max-width: 640px) {
+  .mediaStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.mediaCell {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+}
+
+.mediaCell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mediaCellLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-1);
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.mediaMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  background: var(--row-hover);
+}
+
+.mediaCoverBadge {
+  position: absolute;
+  top: var(--sp-1);
+  left: var(--sp-1);
+  padding: 0 var(--sp-2);
+  border-radius: 999px;
+  background: var(--accent-border);
+  color: #fff;
+  font-size: var(--fs-xs);
+}
+
+.detailNote {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 /* -------------------------------------------------------------- toolbar -- */

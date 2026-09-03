@@ -84,7 +84,7 @@ watch([sourceFilter, statusFilter], () => (offset.value = 0))
 <template>
   <section class="panel">
     <div class="toolbar">
-      <h2 class="toolbarTitle">System log</h2>
+      <h2 class="toolbarTitle">Logs</h2>
       <div class="toolbarFilters">
         <select v-model="sourceFilter" class="selectCompact" title="Filter by source">
           <option value="">All sources</option>

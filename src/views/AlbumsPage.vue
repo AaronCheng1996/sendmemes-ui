@@ -2,16 +2,17 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import type { Album, AlbumSendMode } from '../types/admin'
-import { createAlbum, deleteAlbum, listAlbums, sendAlbumTest, updateAlbum } from '../services/adminApi'
+import type { Album, AlbumSendMode, Image } from '../types/admin'
+import { createAlbum, deleteAlbum, listAlbums, listImages, sendAlbumTest, updateAlbum } from '../services/adminApi'
 import { useJobs } from '../composables/useJobs'
 import { useAsyncTask } from '../composables/useAsyncTask'
 import { useToast } from '../composables/useToast'
 import { usePageSize } from '../composables/usePageSize'
 import { usePreviewSize } from '../composables/usePreviewSize'
+import MediaStrip from '../components/MediaStrip.vue'
 import Pagination from '../components/Pagination.vue'
 import ThumbPreview from '../components/ThumbPreview.vue'
-import { formatAbsolute } from '../utils/time'
+import { formatAbsolute, formatRelative } from '../utils/time'
 
 const router = useRouter()
 const { pushToast } = useToast()
@@ -23,9 +24,50 @@ const offset = ref(0)
 const limit = usePageSize('sendmemes_ui_albums_page_size', 10)
 const { previewSize } = usePreviewSize()
 
-type AlbumSortKey = 'id' | 'name' | 'positive_rating' | 'cover'
-const sortKey = ref<AlbumSortKey>('id')
-const sortDir = ref<'asc' | 'desc'>('asc')
+type AlbumSortKey = 'updated' | 'name' | 'positive_rating' | 'cover' | 'media_count'
+// Newest activity first: the albums that just gained files are the ones worth
+// looking at, and an id column told nobody anything.
+const sortKey = ref<AlbumSortKey>('updated')
+const sortDir = ref<'asc' | 'desc'>('desc')
+
+// Expanded rows and the first few files each holds, fetched on first expand.
+const expanded = ref<Set<number>>(new Set())
+const media = ref<Record<number, Image[]>>({})
+const loadingMedia = ref<Set<number>>(new Set())
+
+async function toggleExpand(a: Album) {
+  const next = new Set(expanded.value)
+  if (next.delete(a.id)) {
+    expanded.value = next
+    return
+  }
+  next.add(a.id)
+  expanded.value = next
+  if (media.value[a.id] || loadingMedia.value.has(a.id)) return
+
+  loadingMedia.value = new Set(loadingMedia.value).add(a.id)
+  try {
+    // Six is what the strip shows; the cover is pulled to the front below.
+    const page = await listImages({ albumId: String(a.id), limit: 6, sortBy: 'id', sortOrder: 'asc' })
+    media.value = { ...media.value, [a.id]: coverFirst(page.items, a) }
+  } catch {
+    media.value = { ...media.value, [a.id]: [] }
+  } finally {
+    const done = new Set(loadingMedia.value)
+    done.delete(a.id)
+    loadingMedia.value = done
+  }
+}
+
+/** Puts the album's cover in the first cell, where the badge expects it. */
+function coverFirst(items: Image[], a: Album): Image[] {
+  if (!a.has_cover || !a.cover_image_id) return items
+  const idx = items.findIndex((img) => img.id === a.cover_image_id)
+  if (idx <= 0) return items
+  const copy = [...items]
+  const [cover] = copy.splice(idx, 1)
+  return [cover, ...copy]
+}
 
 type AlbumFilterField = 'all' | 'id' | 'name' | 'positive_rating' | 'cover'
 const filterFieldInput = ref<AlbumFilterField>('all')
@@ -233,18 +275,23 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing]
     <table class="tableResponsive">
       <thead>
         <tr>
-          <th class="sortable" @click="toggleSort('id')">ID {{ sortLabel('id') }}</th>
+          <th class="sortable" @click="toggleSort('updated')">Updated {{ sortLabel('updated') }}</th>
           <th>Cover</th>
           <th v-if="previewSize !== 'off'">Preview</th>
-          <th class="sortable" @click="toggleSort('name')">Name {{ sortLabel('name') }}</th>
+          <th class="sortable nameCol" @click="toggleSort('name')">Name {{ sortLabel('name') }}</th>
+          <th class="sortable" @click="toggleSort('media_count')">Count {{ sortLabel('media_count') }}</th>
           <th>Send mode</th>
           <th class="sortable" @click="toggleSort('positive_rating')">Rating {{ sortLabel('positive_rating') }}</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="a in albums" :key="a.id">
-          <td data-label="ID">{{ a.id }}</td>
+        <template v-for="a in albums" :key="a.id">
+        <tr :class="{ rowOpen: expanded.has(a.id) }">
+          <td class="rowClickable" data-label="Updated" :title="a.updated_at ? formatAbsolute(a.updated_at) : ''" @click="toggleExpand(a)">
+            <span class="rowCaret">{{ expanded.has(a.id) ? '▾' : '▸' }}</span>
+            {{ a.updated_at ? formatRelative(a.updated_at) : '-' }}
+          </td>
           <td data-label="Cover">
             <span v-if="a.has_cover" class="coverIcon has" :title="`Cover image #${a.cover_image_id ?? ''}`">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -261,10 +308,10 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing]
           <td v-if="previewSize !== 'off'" data-label="Preview">
             <ThumbPreview :src="a.preview_url" :alt="a.name" :size="previewSize" placeholder="empty" />
           </td>
-          <td data-label="Name">
+          <td class="nameCol" data-label="Name">
             <input v-if="editingAlbumId === a.id" v-model="editingAlbumName" class="inputInlineEdit" />
             <template v-else>
-              <span>{{ a.name }}</span>
+              <span class="nameText" :title="a.name">{{ a.name }}</span>
               <span
                 v-if="a.missing_since"
                 class="missingBadge"
@@ -272,6 +319,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing]
               >missing</span>
             </template>
           </td>
+          <td class="countCell" data-label="Count">{{ a.media_count ?? 0 }}</td>
           <td data-label="Send mode">
             <select v-if="editingAlbumId === a.id" v-model="editingAlbumSendMode" class="selectCompact sendModeSelect">
               <option value="Order">Order</option>
@@ -297,6 +345,19 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing]
             </template>
           </td>
         </tr>
+        <tr v-if="expanded.has(a.id)" :key="`${a.id}-detail`" class="rowDetail">
+          <td :colspan="previewSize !== 'off' ? 8 : 7">
+            <p v-if="loadingMedia.has(a.id)" class="detailNote">Loading files…</p>
+            <MediaStrip
+              v-else-if="(media[a.id] ?? []).length"
+              :items="media[a.id]"
+              :total="a.media_count ?? 0"
+              cover-first
+            />
+            <p v-else class="detailNote">This album holds no files.</p>
+          </td>
+        </tr>
+        </template>
       </tbody>
     </table>
 
@@ -362,6 +423,31 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing]
 </template>
 
 <style scoped>
+/* Five buttons wrapping to a second line made every row twice as tall; the
+   cell scrolls instead on a narrow viewport. */
+.actions {
+  white-space: nowrap;
+}
+
+/* A long album name should not push Actions off the row. */
+.nameCol {
+  max-width: 16rem;
+}
+
+.nameText {
+  display: inline-block;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.countCell {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .mutedInline {
   font-weight: 400;
   color: var(--text-muted);

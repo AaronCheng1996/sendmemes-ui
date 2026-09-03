@@ -22,6 +22,11 @@ export type Album = {
    *  hidden from this list by default, and skipped by scheduled delivery, until
    *  the folder reappears. */
   missing_since?: string
+  /** How many live files the album holds. Computed by the list endpoint. */
+  media_count?: number
+  /** When the album's content last changed — its newest file's arrival. A send
+   *  or a rating does not move it. Computed by the list endpoint. */
+  updated_at?: string
 }
 
 export type Image = {
