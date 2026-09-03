@@ -278,7 +278,7 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing]
       <tbody>
         <template v-for="a in albums" :key="a.id">
         <tr :class="{ rowOpen: expanded.has(a.id) }">
-          <td class="rowClickable" data-label="Updated" :title="a.updated_at ? formatAbsolute(a.updated_at) : ''" @click="toggleExpand(a)">
+          <td class="rowClickable updatedCell" data-label="Updated" :title="a.updated_at ? formatAbsolute(a.updated_at) : ''" @click="toggleExpand(a)">
             <span class="rowCaret">{{ expanded.has(a.id) ? '▾' : '▸' }}</span>
             {{ a.updated_at ? formatRelative(a.updated_at) : '-' }}
           </td>
@@ -413,9 +413,18 @@ watch([offset, limit, sortKey, sortDir, filterField, filterText, includeMissing]
 </template>
 
 <style scoped>
-/* Five buttons wrapping to a second line made every row twice as tall; the
-   cell scrolls instead on a narrow viewport. */
+/* Five buttons wrapping to a second line made every row twice as tall. The
+   shared .actions is a wrapping flex row, so this has to turn the wrap off —
+   white-space alone does nothing to flex items. width:1% then lets the column
+   shrink to exactly the buttons and hands the slack to Name. */
 .actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* "10 minutes ago" is not worth two lines. */
+.updatedCell {
   white-space: nowrap;
 }
 

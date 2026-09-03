@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import type { Image } from '../types/admin'
+import { useThumbPreview } from '../composables/useThumbPreview'
 
 const props = defineProps<{
   /** The images to show, already in the order they should appear. */
@@ -26,11 +27,23 @@ const shown = computed(() => props.items.slice(0, hasOverflow.value ? SLOTS - 1 
 function thumb(img: Image): string | undefined {
   return img.kind === 'video' ? undefined : img.preview_url
 }
+
+// Same floating full-size preview the table thumbnails use. One instance for
+// the whole strip: only one cell can be hovered at a time, and it is the
+// hovered cell that supplies both the anchor and the image.
+const { open, src: previewSrc, pos, show, hide } = useThumbPreview()
 </script>
 
 <template>
   <div v-if="items.length" class="mediaStrip">
-    <div v-for="(img, i) in shown" :key="img.id" class="mediaCell" :title="img.url">
+    <div
+      v-for="(img, i) in shown"
+      :key="img.id"
+      class="mediaCell"
+      :title="img.url"
+      @mouseenter="show($event.currentTarget as HTMLElement, thumb(img))"
+      @mouseleave="hide"
+    >
       <!-- Deliberately not lazy: the strip only exists after a click, and a row
            inserted then never gets re-evaluated as a lazy candidate, so all but
            the first thumbnail would sit unfetched. Six small images cost nothing. -->
@@ -39,5 +52,9 @@ function thumb(img: Image): string | undefined {
       <span v-if="coverFirst && i === 0" class="mediaCoverBadge">cover</span>
     </div>
     <div v-if="hasOverflow" class="mediaCell mediaMore">…{{ overflow }} more</div>
+
+    <Teleport to="body">
+      <img v-if="open" class="thumb-full" :style="pos" :src="previewSrc" alt="" />
+    </Teleport>
   </div>
 </template>
